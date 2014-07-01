@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.sandwich:koans-lib:Summer2014">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/sandwich/koans-lib/Summer2014/koans-lib-Summer2014.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/sandwich/koans-lib/Summer2014/koans-lib-Summer2014-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/sandwich/koans-lib/Summer2014/koans-lib-Summer2014-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
