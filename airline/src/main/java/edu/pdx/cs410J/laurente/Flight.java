@@ -8,39 +8,54 @@ import edu.pdx.cs410J.AbstractFlight;
 public class Flight extends AbstractFlight {
     private String source;
     private String destin;
+    private String departInfo;
+    private String arriveInfo;
+    private int flightNum;
 
     Flight() {
         this.source = null;
         this.destin = null;
+        this.flightNum = -1;
+        this.departInfo = null;
+        this.arriveInfo = null;
     }
 
-    Flight (String source, String dest) {
+    Flight (int flightNum, String source, String dest) {
+        this.flightNum = flightNum;
         this.source = source;
         this.destin = dest;
     }
 
+    public void addDepartInfo(String departure) {
+        this.departInfo = departure;
+    }
+
+    public void addArriveInfo(String arrival) {
+        this.arriveInfo = arrival;
+    }
+
     @Override
     public int getNumber() {
-        return 0;
+        return this.flightNum;
     }
 
     @Override
     public String getSource() {
-        return null;
+        return source;
     }
 
     @Override
     public String getDepartureString() {
-        return null;
+        return this.departInfo;
     }
 
     @Override
     public String getDestination() {
-        return null;
+        return this.destin;
     }
 
     @Override
     public String getArrivalString() {
-        return null;
+        return this.arriveInfo;
     }
 }

@@ -29,16 +29,18 @@ public class Airline extends AbstractAirline {
 
     @Override
     public String getName() {
-        return null;
+        return this.name;
     }
 
     @Override
     public void addFlight(AbstractFlight abstractFlight) {
-
+        if (abstractFlight instanceof Flight) {
+            flights.add((Flight) abstractFlight);
+        }
     }
 
     @Override
     public Collection getFlights() {
-        return null;
+        return this.flights;
     }
 }
