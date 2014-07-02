@@ -41,7 +41,7 @@ public class Flight extends AbstractFlight {
 
     @Override
     public String getSource() {
-        return source;
+        return this.source;
     }
 
     @Override
