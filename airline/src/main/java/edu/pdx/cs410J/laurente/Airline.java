@@ -9,6 +9,24 @@ import java.util.Collection;
  * Created by emerald on 7/2/14.
  */
 public class Airline extends AbstractAirline {
+    private String name;
+    private Collection<Flight> flights;
+
+    Airline() {
+        this.name = null;
+        this.flights = null;
+    }
+
+    Airline(String name) {
+        this.name = name;
+        this.flights = null;
+    }
+
+    Airline(String name, Collection<Flight> flights) {
+        this.name = name;
+        this.flights = flights;
+    }
+
     @Override
     public String getName() {
         return null;
