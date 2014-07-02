@@ -1,4 +1,4 @@
-package edu.pdx.cs410J.laurente.login;
+package edu.pdx.cs410J.laurente;
 
 import edu.pdx.cs410J.AbstractAirline;
 import edu.pdx.cs410J.AbstractFlight;
