@@ -33,15 +33,15 @@ public class Project1 {
         StringBuilder usage = new StringBuilder();
         usage.append("usage: java edu.pdx.cs410J.laurente.Project1 [options] <args>\n");
         usage.append("\targs are (in this order):\n");
-        usage.append(USAGE_NAME + "\n");
-        usage.append(USAGE_FLIGHTNUMBER + "\n");
-        usage.append(USAGE_SRC + "\n");
-        usage.append(USAGE_DEPARTTIME + "\n");
-        usage.append(USAGE_DEST + "\n");
-        usage.append(USAGE_ARRIVAL + "\n");
+        usage.append(USAGE_NAME).append("\n");
+        usage.append(USAGE_FLIGHTNUMBER).append("\n");
+        usage.append(USAGE_SRC).append("\n");
+        usage.append(USAGE_DEPARTTIME).append("\n");
+        usage.append(USAGE_DEST).append("\n");
+        usage.append(USAGE_ARRIVAL).append("\n");
         usage.append("\toptions are (options may appear in any order):\n");
-        usage.append(USAGE_PRINT + "\n");
-        usage.append(USAGE_README + "\n");
+        usage.append(USAGE_PRINT).append("\n");
+        usage.append(USAGE_README).append("\n");
         return usage.toString();
     }
 
