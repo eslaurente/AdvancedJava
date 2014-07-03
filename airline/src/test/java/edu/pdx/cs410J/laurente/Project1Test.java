@@ -14,7 +14,7 @@ public class Project1Test extends InvokeMainTestCase {
      * Invokes the main method of {@link Project1} with the given arguments.
      */
     private MainMethodResult invokeMain(String... args) {
-        return invokeMain( Project1.class, args );
+      return invokeMain( Project1.class, args );
     }
 
   /**
@@ -25,6 +25,12 @@ public class Project1Test extends InvokeMainTestCase {
     MainMethodResult result = invokeMain();
     assertEquals(new Integer(1), result.getExitCode());
     assertTrue(result.getErr().contains( "Missing command line arguments" ));
+  }
+
+  @Test
+  public void checkUsagePrinting() {
+    MainMethodResult result = invokeMain();
+    System.out.print(result.getOut());
   }
 
 }
