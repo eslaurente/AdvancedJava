@@ -1,6 +1,7 @@
 package edu.pdx.cs410J.laurente;
 
 import edu.pdx.cs410J.AbstractAirline;
+import jdk.nashorn.internal.objects.NativeString;
 
 /**
  * The main class for the CS410J airline Project
@@ -46,13 +47,84 @@ public class Project1 {
     return usage.toString();
   }
 
-
-  public static String tabulate(int numOfTabs) {
+  /**
+   * This method creates a customized number of spaces used for tab spaces using
+   * a StringBuilder object
+   * @param numOfSpaces The number of spaces to concatenate
+   * @return The space String object from the tabs object
+   */
+  public static String tabulate(int numOfSpaces) {
     StringBuilder tabs = new StringBuilder();
-    for (int i = 0; i < numOfTabs; ++i) {
+    for (int i = 0; i < numOfSpaces; ++i) {
       tabs.append(" ");
     }
     return tabs.toString();
   }
 
+  /**
+   * This method attempts to parse the date section of the args passed in. The criteria for the date and time format
+   * is that it must be in this format: mm/dd/yyyy hh:mm
+   * Where each character must be an integer and can have only one or two digits. Any other combination of sequence of
+   * characters will be invalid and will result in this method returning a null value.
+   * @param dateTimeArg The incoming
+   * @return The resulting formatted date and time String object. null value returned if argument is in an invalid format
+   */
+  public static String formatDateTime(String dateTimeArg) {
+    StringBuilder resultingStr = null;
+    String[] splitDateTime = null; //Result must be an array of 2 String elements
+    String[] splitDate = null; //Result must be an array of 3 String elements
+    String[] splitTime = null; //Result must be an array of 2 String elements
+
+    if (dateTimeArg == null || dateTimeArg.equals("")) {
+      return null;
+    }
+    else {
+      splitDateTime = dateTimeArg.split("\\s"); //Should result into an array of two Strings:
+                                             // first element -- the date, second element -- the time
+      if (splitDateTime.length != 2) {
+        return null; // If return null for invalid format there is no space between date and time
+      }
+      String date = splitDateTime[0];
+      String time = splitDateTime[1];
+      splitDate = date.split("/");
+      splitTime = time.split(":");
+      if (splitDate.length != 3 || splitTime.length != 2) {
+        return null;  // Return null for formatting error if the
+      }
+      else {
+        //Build the date part of the resulting string
+        for (String subStr : splitDate) {
+          if (subStr.matches("\\d") || subStr.matches("\\d\\d")) {
+            try { //substring must pass Integer parsing to be a valid argument
+              resultingStr.append(Integer.parseInt(subStr));
+            }
+            catch (NumberFormatException e){
+              return null; //Return null for invalid format if a date number is not an integer
+            }
+            resultingStr.append("/");
+          }
+          else {
+            return null; //Return null for invalid format if the date number has more than two numbers
+          }
+        }
+        resultingStr.append(" ");
+        //Build the time part of the resulting String
+        for (String subStr : splitTime) {
+          if (subStr.matches("\\d") || subStr.matches("\\d\\d")) {
+            try { //substring must pass Integer parsing to be a valid argument
+              resultingStr.append(Integer.parseInt(subStr));
+            }
+            catch (NumberFormatException e){
+              return null; //Return null for invalid format if a time number is not an integer
+            }
+          }
+          else {
+            return null; //Return null for invalid format if the time number has more than two numbers
+          }
+          resultingStr.append(":");
+        }
+      }
+    }
+    return resultingStr.toString();
+  }
 }
