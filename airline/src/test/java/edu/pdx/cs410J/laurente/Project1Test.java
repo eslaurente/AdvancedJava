@@ -33,4 +33,10 @@ public class Project1Test extends InvokeMainTestCase {
     System.out.print(result.getOut());
   }
 
+  @Test
+  public void checkDateTimeFormatPrinting() {
+    MainMethodResult result = invokeMain();
+    System.out.print(result.getOut());
+  }
+
 }

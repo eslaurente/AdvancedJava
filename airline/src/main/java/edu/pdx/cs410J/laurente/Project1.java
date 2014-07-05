@@ -3,6 +3,11 @@ package edu.pdx.cs410J.laurente;
 import edu.pdx.cs410J.AbstractAirline;
 import jdk.nashorn.internal.objects.NativeString;
 
+import javax.lang.model.util.SimpleElementVisitor6;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * The main class for the CS410J airline Project
  */
@@ -24,6 +29,7 @@ public class Project1 {
       System.out.println(arg);
     }
     printUsage();
+    System.out.println(formatDateTime("01/30/2014 14:09"));
     System.exit(1);
   }
 
@@ -64,65 +70,26 @@ public class Project1 {
   /**
    * This method attempts to parse the date section of the args passed in. The criteria for the date and time format
    * is that it must be in this format: mm/dd/yyyy hh:mm
-   * Where each character must be an integer and can have only one or two digits. Any other combination of sequence of
-   * characters will be invalid and will result in this method returning a null value.
-   * @param dateTimeArg The incoming
-   * @return The resulting formatted date and time String object. null value returned if argument is in an invalid format
+   * This method uses the SimpleDateFormat class to parse and format the date/time argument.
+   * @param dateTimeArg The argument that contains the date and time string
+   * @return The formatted string of the date and time argument.
+   *  The null value is returned if there is no argument for the date and time. An error string message is
+   *  returned if either the date argument part of the argument is not the right format or not a valid date, or
+   *  if the time is not a valid 24-hour time format.
    */
   public static String formatDateTime(String dateTimeArg) {
-    StringBuilder resultingStr = null;
-    String[] splitDateTime = null; //Result must be an array of 2 String elements
-    String[] splitDate = null; //Result must be an array of 3 String elements
-    String[] splitTime = null; //Result must be an array of 2 String elements
-
+    StringBuilder resultingStr = new StringBuilder();
     if (dateTimeArg == null || dateTimeArg.equals("")) {
       return null;
-    }
-    else {
-      splitDateTime = dateTimeArg.split("\\s"); //Should result into an array of two Strings:
-                                             // first element -- the date, second element -- the time
-      if (splitDateTime.length != 2) {
-        return null; // If return null for invalid format there is no space between date and time
-      }
-      String date = splitDateTime[0];
-      String time = splitDateTime[1];
-      splitDate = date.split("/");
-      splitTime = time.split(":");
-      if (splitDate.length != 3 || splitTime.length != 2) {
-        return null;  // Return null for formatting error if the
-      }
-      else {
-        //Build the date part of the resulting string
-        for (String subStr : splitDate) {
-          if (subStr.matches("\\d") || subStr.matches("\\d\\d")) {
-            try { //substring must pass Integer parsing to be a valid argument
-              resultingStr.append(Integer.parseInt(subStr));
-            }
-            catch (NumberFormatException e){
-              return null; //Return null for invalid format if a date number is not an integer
-            }
-            resultingStr.append("/");
-          }
-          else {
-            return null; //Return null for invalid format if the date number has more than two numbers
-          }
-        }
-        resultingStr.append(" ");
-        //Build the time part of the resulting String
-        for (String subStr : splitTime) {
-          if (subStr.matches("\\d") || subStr.matches("\\d\\d")) {
-            try { //substring must pass Integer parsing to be a valid argument
-              resultingStr.append(Integer.parseInt(subStr));
-            }
-            catch (NumberFormatException e){
-              return null; //Return null for invalid format if a time number is not an integer
-            }
-          }
-          else {
-            return null; //Return null for invalid format if the time number has more than two numbers
-          }
-          resultingStr.append(":");
-        }
+    } else {
+      SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+      dateFormat.setLenient(false);
+      Date formattedDate;
+      try {
+        formattedDate = dateFormat.parse(dateTimeArg);
+        resultingStr.append(dateFormat.format(formattedDate));
+      } catch (ParseException e) {
+        return "Invalid argument: Please enter a valid date and/or time (24-hour time format)";
       }
     }
     return resultingStr.toString();
