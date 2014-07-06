@@ -2,11 +2,14 @@ package edu.pdx.cs410J.laurente;
 
 import edu.pdx.cs410J.AbstractAirline;
 import jdk.nashorn.internal.objects.NativeString;
+import sun.plugin2.applet.Applet2ThreadGroup;
 
 import javax.lang.model.util.SimpleElementVisitor6;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * The main class for the CS410J airline Project
@@ -21,16 +24,49 @@ public class Project1 {
   public static final String USAGE_ARRIVAL = "arrival" + tabulate(21) + "Arrival date and time (24-hour time)";
   public static final String USAGE_PRINT = "-print" + tabulate(22) + "Prints a description of the new flight";
   public static final String USAGE_README = "-README" + tabulate(21) + "Prints a README for this project and exits";
+  public static final String OPTION_PRINT = "-print";
+  public static final String OPTION_README = "-README";
 
   public static void main(String[] args) {
+    int argStartingPosition = 0;
+    List<String> options;
     Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
-    System.err.println("Missing command line arguments");
-    for (String arg : args) {
-      System.out.println(arg);
+    System.err.print("Missing command line arguments");
+
+    try {
+      options = getOptions(args);
+      argStartingPosition = options.size();
+    } catch (ParseException e) {
+      printUsage();
+      System.exit(1);
     }
-    printUsage();
-    System.out.println(formatDateTime("01/30/2014 14:09"));
-    System.exit(1);
+    //Validate
+    String formattingResult = formatDateTime(args[argStartingPosition + 3]);
+    if(formattingResult == null) {
+      printUsage();
+      System.exit(1);
+    }
+    else {
+      System.out.print(formattingResult);
+    }
+    System.exit(0);
+  }
+
+  public static List<String> getOptions(String[] args) throws ParseException{
+    List<String> options = new ArrayList<String>();
+    int nonOptionArgCount = 0;
+    for (String currentArg : args) {
+      if (currentArg.equals(OPTION_PRINT) || currentArg.equals(OPTION_README)) {
+        if (nonOptionArgCount > 1) {
+          throw new ParseException("", -1);
+        }
+        options.add(currentArg);
+      }
+      else {
+        ++nonOptionArgCount;
+      }
+    }
+    return options;
   }
 
   public static void printUsage() {
@@ -89,7 +125,7 @@ public class Project1 {
         formattedDate = dateFormat.parse(dateTimeArg);
         resultingStr.append(dateFormat.format(formattedDate));
       } catch (ParseException e) {
-        return "Invalid argument: Please enter a valid date and/or time (24-hour time format)";
+        return "Invalid argument: Please enter a valid date (mm/dd/yyyy format) and/or time (24-hour time format)";
       }
     }
     return resultingStr.toString();

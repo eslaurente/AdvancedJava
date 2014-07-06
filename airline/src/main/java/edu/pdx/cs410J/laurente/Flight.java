@@ -1,11 +1,11 @@
-package edu.pdx.cs410J.laurente;
+  package edu.pdx.cs410J.laurente;
 
-import edu.pdx.cs410J.AbstractFlight;
+  import edu.pdx.cs410J.AbstractFlight;
 
-/**
- * Created by emerald on 7/2/14.
- */
-public class Flight extends AbstractFlight {
+  /**
+  * Created by emerald on 7/2/14.
+  */
+  public class Flight extends AbstractFlight {
     private String source;
     private String destin;
     private String departInfo;
@@ -13,49 +13,51 @@ public class Flight extends AbstractFlight {
     private int flightNum;
 
     Flight() {
-        this.source = null;
-        this.destin = null;
-        this.flightNum = -1;
-        this.departInfo = null;
-        this.arriveInfo = null;
+      this.source = null;
+      this.destin = null;
+      this.flightNum = -1;
+      this.departInfo = null;
+      this.arriveInfo = null;
     }
 
-    Flight (int flightNum, String source, String dest) {
-        this.flightNum = flightNum;
-        this.source = source;
-        this.destin = dest;
+    Flight (int flightNum, String source, String dest, String departInfo, String arriveInfo) {
+      this.flightNum = flightNum;
+      this.source = source;
+      this.destin = dest;
+      this.departInfo = departInfo;
+      this.arriveInfo = arriveInfo;
     }
 
-    public void addDepartInfo(String departure) {
-        this.departInfo = departure;
+    public void setDepartInfo(String departure) {
+      this.departInfo = departure;
     }
 
-    public void addArriveInfo(String arrival) {
-        this.arriveInfo = arrival;
+    public void setArriveInfo(String arrival) {
+      this.arriveInfo = arrival;
     }
 
     @Override
     public int getNumber() {
-        return this.flightNum;
+      return this.flightNum;
     }
 
     @Override
     public String getSource() {
-        return this.source;
+      return this.source;
     }
 
     @Override
     public String getDepartureString() {
-        return this.departInfo;
+      return this.departInfo;
     }
 
     @Override
     public String getDestination() {
-        return this.destin;
+      return this.destin;
     }
 
     @Override
     public String getArrivalString() {
-        return this.arriveInfo;
+      return this.arriveInfo;
     }
-}
+  }

@@ -34,9 +34,9 @@ public class Project1Test extends InvokeMainTestCase {
   }
 
   @Test
-  public void checkDateTimeFormatPrinting() {
-    MainMethodResult result = invokeMain();
-    System.out.print(result.getOut());
+  public void testDateTimeFormatPrinting() {
+    MainMethodResult result = invokeMain("", "", "", "3/02/2014 4:53");
+    assertEquals("03/02/2014 04:53", result.getOut());
   }
 
 }
