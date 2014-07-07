@@ -10,15 +10,14 @@ import java.util.List;
  * The main class for the CS410J airline Project
  */
 public class Project1 {
-
-  public static final String USAGE_NAME = "name" + tabulate(24) + "The name of the airline";
-  public static final String USAGE_FLIGHTNUMBER = "flightNumber" + tabulate(16) + "The flight number";
-  public static final String USAGE_SRC = "src" + tabulate(25) + "Three-letter code of departure airport";
-  public static final String USAGE_DEPARTTIME = "departTime" + tabulate(18) + "Departure date and time (24-hour time)";
-  public static final String USAGE_DEST = "dest" + tabulate(24) + "Three-letter code of arrival airport";
-  public static final String USAGE_ARRIVAL = "arrivalTime" + tabulate(21) + "Arrival date and time (24-hour time)";
-  public static final String USAGE_PRINT = "-print" + tabulate(22) + "Prints a description of the new flight";
-  public static final String USAGE_README = "-README" + tabulate(21) + "Prints a README for this project and exits";
+  public static final String USAGE_NAME = "name" + tabulate(18) + "The name of the airline";
+  public static final String USAGE_FLIGHTNUMBER = "flightNumber" + tabulate(10) + "The flight number";
+  public static final String USAGE_SRC = "src" + tabulate(19) + "Three-letter code of departure airport";
+  public static final String USAGE_DEPARTTIME = "departTime" + tabulate(12) + "Departure date and time (24-hour time)";
+  public static final String USAGE_DEST = "dest" + tabulate(18) + "Three-letter code of arrival airport";
+  public static final String USAGE_ARRIVAL = "arrivalTime" + tabulate(11) + "Arrival date and time (24-hour time)";
+  public static final String USAGE_PRINT = "-print" + tabulate(16) + "Prints a description of the new flight";
+  public static final String USAGE_README = "-README" + tabulate(15) + "Prints a README for this project and exits";
   public static final String OPTION_PRINT = "-print";
   public static final String OPTION_README = "-README";
   public static final String VERBOSE_USAGE = buildUsageString();
@@ -149,16 +148,16 @@ public class Project1 {
   private static String buildUsageString() {
     StringBuilder usage = new StringBuilder();
     usage.append("usage: java edu.pdx.cs410J.laurente.Project1 [options] <args>\n");
-    usage.append("\targs are (in this order):\n");
-    usage.append("\t\t").append(USAGE_NAME).append("\n");
-    usage.append("\t\t").append(USAGE_FLIGHTNUMBER).append("\n");
-    usage.append("\t\t").append(USAGE_SRC).append("\n");
-    usage.append("\t\t").append(USAGE_DEPARTTIME).append("\n");
-    usage.append("\t\t").append(USAGE_DEST).append("\n");
-    usage.append("\t\t").append(USAGE_ARRIVAL).append("\n");
-    usage.append("\toptions are (options may appear in any order):\n");
-    usage.append("\t\t").append(USAGE_PRINT).append("\n");
-    usage.append("\t\t").append(USAGE_README).append("\n");
+    usage.append("  args are (in this order):\n");
+    usage.append("    ").append(USAGE_NAME).append("\n");
+    usage.append("    ").append(USAGE_FLIGHTNUMBER).append("\n");
+    usage.append("    ").append(USAGE_SRC).append("\n");
+    usage.append("    ").append(USAGE_DEPARTTIME).append("\n");
+    usage.append("    ").append(USAGE_DEST).append("\n");
+    usage.append("    ").append(USAGE_ARRIVAL).append("\n");
+    usage.append("  options are (options may appear in any order):\n");
+    usage.append("    ").append(USAGE_PRINT).append("\n");
+    usage.append("    ").append(USAGE_README).append("\n");
     return usage.toString();
   }
 
@@ -183,8 +182,7 @@ public class Project1 {
    * @param dateTimeArg The argument that contains the date and time string
    * @return The formatted string of the date and time argument.
    *  The null value is returned if there is no argument for the date and time. An error string message is
-   *  returned if either the date argum     printUsageMessageError();
-      System.exit(1);ent part of the argument is not the right format or not a valid date, or
+   *  returned if either the date argument part of the argument is not the right format or not a valid date, or
    *  if the time is not a valid 24-hour time format.
    */
   public static String formatDateTime(String dateTimeArg) throws ParseException {
