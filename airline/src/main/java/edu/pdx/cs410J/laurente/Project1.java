@@ -145,6 +145,11 @@ public class Project1 {
     }
   }
 
+
+  /**
+   * This method
+   * @return
+   */
   private static String buildUsageString() {
     StringBuilder usage = new StringBuilder();
     usage.append("usage: java edu.pdx.cs410J.laurente.Project1 [options] <args>\n");
@@ -162,8 +167,8 @@ public class Project1 {
   }
 
   /**
-   * This method creates a customized number of spaces used for tab spaces using
-   * a StringBuilder object
+   * This method creates a customized number of spaces used for tab spacing, using int parameter to determine
+   * how many spaces to append.
    * @param numOfSpaces The number of spaces to concatenate
    * @return The space String object from the tabs object
    */
@@ -179,15 +184,13 @@ public class Project1 {
    * This method attempts to parse the date section of the args passed in. The criteria for the date and time format
    * is that it must be in this format: mm/dd/yyyy hh:mm
    * This method uses the SimpleDateFormat class to parse and format the date/time argument.
-   * @param dateTimeArg The argument that contains the date and time string
-   * @return The formatted string of the date and time argument.
-   *  The null value is returned if there is no argument for the date and time. An error string message is
-   *  returned if either the date argument part of the argument is not the right format or not a valid date, or
-   *  if the time is not a valid 24-hour time format.
+   * @param dateTimeArg         The argument that contains the date and time string
+   * @return                    The formatted string of the date and time argument.
+   * @exception ParseException  An error is thrown if dateTimeArg is not of the form "MM/dd/yyy HH:mm"
    */
   public static String formatDateTime(String dateTimeArg) throws ParseException {
     StringBuilder resultingStr = new StringBuilder();
-    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm"); //capital HH means to use 24-hour format
     dateFormat.setLenient(false); //to disallow dates like 03/33/2014, etc
     Date formattedDate;
     try {
