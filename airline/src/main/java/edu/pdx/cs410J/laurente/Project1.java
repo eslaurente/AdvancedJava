@@ -1,10 +1,7 @@
 package edu.pdx.cs410J.laurente;
 
 import edu.pdx.cs410J.AbstractAirline;
-import jdk.nashorn.internal.objects.NativeString;
-import sun.plugin2.applet.Applet2ThreadGroup;
 
-import javax.lang.model.util.SimpleElementVisitor6;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,35 +18,95 @@ public class Project1 {
   public static final String USAGE_SRC = "src" + tabulate(25) + "Three-letter code of departure airport";
   public static final String USAGE_DEPARTTIME = "departTime" + tabulate(18) + "Departure date and time (24-hour time)";
   public static final String USAGE_DEST = "dest" + tabulate(24) + "Three-letter code of arrival airport";
-  public static final String USAGE_ARRIVAL = "arrival" + tabulate(21) + "Arrival date and time (24-hour time)";
+  public static final String USAGE_ARRIVAL = "arrivalTime" + tabulate(21) + "Arrival date and time (24-hour time)";
   public static final String USAGE_PRINT = "-print" + tabulate(22) + "Prints a description of the new flight";
   public static final String USAGE_README = "-README" + tabulate(21) + "Prints a README for this project and exits";
   public static final String OPTION_PRINT = "-print";
   public static final String OPTION_README = "-README";
 
   public static void main(String[] args) {
+    Airline anAirline = null;
+    List<String> airlineFlightInfo = new ArrayList<String>();
+    String name, flightNumber, src, departTime, dest, arrivalTime;
     int argStartingPosition = 0;
     List<String> options;
-    Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
-    System.err.print("Missing command line arguments");
+    //Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
+    //System.err.print("Missing command line arguments");
 
     try {
       options = getOptions(args);
       argStartingPosition = options.size();
     } catch (ParseException e) {
-      printUsage();
+      printUsageMessageError(e.getMessage());
+      System.exit(1);
+      throw new AssertionError("Unreachable statement reached.");
+    }
+
+    if (args.length - argStartingPosition < 6) {
+      printUsageMessageError("Invalid argument: Not enough information about the flight was provided");
       System.exit(1);
     }
-    //Validate
-    String formattingResult = formatDateTime(args[argStartingPosition + 3]);
-    if(formattingResult == null) {
-      printUsage();
+
+    //Get name
+    name = args[argStartingPosition];
+    if (name.equals("")) {
+      printUsageMessageError("Invalid argument: Airline name cannot be empty");
       System.exit(1);
     }
-    else {
-      System.out.print(formattingResult);
+
+    //Get flight number
+    try {
+      flightNumber = args[argStartingPosition + 1];
+      int unused = Integer.parseInt(flightNumber);
+    } catch (NumberFormatException e) {
+      printUsageMessageError("Invalid argument: flight number must be a valid integer");
+      System.exit(1);
+      throw new AssertionError("Unreachable statement reached.");
+
+    }
+
+    //Get the source airport code
+    src = args[argStartingPosition + 2].toUpperCase(); //use upper-case format
+    if (!isValidAirportCode(src) || src.equals("")) {
+      printUsageMessageError("Error: the source airport code \"" + src + "\" is not a valid code");
+      System.exit(1);
+    }
+
+    //Get departure date and time
+    try {
+      departTime = formatDateTime(args[argStartingPosition + 3]);
+    } catch (ParseException e) {
+      printUsageMessageError(e.getMessage());
+      System.exit(1);
+      throw new AssertionError("Unreachable statement reached.");
+    }
+
+    //Get destination airport code
+    dest = args[argStartingPosition + 4].toUpperCase(); //use upper-case format
+    if (!isValidAirportCode(dest) || dest.equals("")) {
+      printUsageMessageError("Error: the destination airport code \"" + dest + "\" is not a valid code");
+      System.exit(1);
+    }
+
+    //Get arrival date and time
+    try {
+      arrivalTime = formatDateTime(args[argStartingPosition + 5]);
+    } catch (ParseException e) {
+      printUsageMessageError(e.getMessage());
+      System.exit(1);
+      throw new AssertionError("Unreachable statement reached.");
+    }
+    //Create airline object
+    anAirline = new Airline(name, new Flight(flightNumber, src, departTime, dest, arrivalTime));
+
+    if (options.contains(OPTION_PRINT)) {
+      printAirlineFlightInfo(anAirline);
     }
     System.exit(0);
+  }
+
+  public static void printAirlineFlightInfo(Airline anAirline) {
+    System.out.println(anAirline.toString() + ": " + anAirline.getFlights().toArray()[0].toString());
   }
 
   public static List<String> getOptions(String[] args) throws ParseException{
@@ -57,10 +114,17 @@ public class Project1 {
     int nonOptionArgCount = 0;
     for (String currentArg : args) {
       if (currentArg.equals(OPTION_PRINT) || currentArg.equals(OPTION_README)) {
-        if (nonOptionArgCount > 1) {
-          throw new ParseException("", -1);
+        if (nonOptionArgCount > 0) {
+          throw new ParseException("Invalid argument: \"" + currentArg + "\" optional argument must precede required arguments", -1);
         }
-        options.add(currentArg);
+        if (!options.contains(currentArg)) {
+          options.add(currentArg);
+        } else {
+          throw new ParseException("Invalid argument: \"" + currentArg + "\" cannot be duplicated", -1);
+        }
+      }
+      else if (nonOptionArgCount <= 0 && currentArg.startsWith("-")) {
+        throw new ParseException("Invalid argument: \"" + currentArg + "\" option not recognized", -1);
       }
       else {
         ++nonOptionArgCount;
@@ -69,8 +133,16 @@ public class Project1 {
     return options;
   }
 
-  public static void printUsage() {
-    System.out.println(buildUsageString());
+  public static boolean isValidAirportCode(String code) {
+    return code.length() == 3? true : false;
+  }
+
+  public static void printUsageMessageError(String precedingMessage) {
+    if (precedingMessage != null && !precedingMessage.equals("")) {
+      System.err.println(precedingMessage + "\n" + buildUsageString());
+    } else {
+      System.err.println(buildUsageString());
+    }
   }
 
   private static String buildUsageString() {
@@ -110,23 +182,20 @@ public class Project1 {
    * @param dateTimeArg The argument that contains the date and time string
    * @return The formatted string of the date and time argument.
    *  The null value is returned if there is no argument for the date and time. An error string message is
-   *  returned if either the date argument part of the argument is not the right format or not a valid date, or
+   *  returned if either the date argum     printUsageMessageError();
+      System.exit(1);ent part of the argument is not the right format or not a valid date, or
    *  if the time is not a valid 24-hour time format.
    */
-  public static String formatDateTime(String dateTimeArg) {
+  public static String formatDateTime(String dateTimeArg) throws ParseException {
     StringBuilder resultingStr = new StringBuilder();
-    if (dateTimeArg == null || dateTimeArg.equals("")) {
-      return null;
-    } else {
-      SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
-      dateFormat.setLenient(false);
-      Date formattedDate;
-      try {
-        formattedDate = dateFormat.parse(dateTimeArg);
-        resultingStr.append(dateFormat.format(formattedDate));
-      } catch (ParseException e) {
-        return "Invalid argument: Please enter a valid date (mm/dd/yyyy format) and/or time (24-hour time format)";
-      }
+    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+    dateFormat.setLenient(false);
+    Date formattedDate;
+    try {
+      formattedDate = dateFormat.parse(dateTimeArg);
+      resultingStr.append(dateFormat.format(formattedDate));
+    } catch (ParseException e) {
+      throw new ParseException("Invalid argument: Please enter a valid date (mm/dd/yyyy format) and/or time (24-hour time format)", -1);
     }
     return resultingStr.toString();
   }

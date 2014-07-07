@@ -3,6 +3,7 @@ package edu.pdx.cs410J.laurente;
 import edu.pdx.cs410J.AbstractAirline;
 import edu.pdx.cs410J.AbstractFlight;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -19,12 +20,13 @@ public class Airline extends AbstractAirline {
 
   Airline(String name) {
     this.name = name;
-    this.flights = null;
+    this.flights = new ArrayList<Flight>();
   }
 
-  Airline(String name, Collection<Flight> flights) {
+  Airline(String name, Flight flight) {
     this.name = name;
-    this.flights = flights;
+    this.flights = new ArrayList<Flight>();
+    this.addFlight(flight);
   }
 
   @Override
@@ -42,5 +44,15 @@ public class Airline extends AbstractAirline {
   @Override
   public Collection getFlights() {
     return this.flights;
+  }
+
+  @Override
+  public String toString() {
+    return this.flights.size() > 1?
+        this.getName() + " with " + this.getFlights().size() +
+        " flights"
+      :
+        this.getName() + " with " + this.getFlights().size() +
+        " flight";
   }
 }

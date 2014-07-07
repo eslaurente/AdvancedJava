@@ -2,12 +2,14 @@
 
   import edu.pdx.cs410J.AbstractFlight;
 
+  import java.util.Date;
+
   /**
   * Created by emerald on 7/2/14.
   */
   public class Flight extends AbstractFlight {
-    private String source;
-    private String destin;
+    private String source; //Must be a three-letter code string
+    private String destin; //Must be a three-letter code string
     private String departInfo;
     private String arriveInfo;
     private int flightNum;
@@ -22,6 +24,14 @@
 
     Flight (int flightNum, String source, String dest, String departInfo, String arriveInfo) {
       this.flightNum = flightNum;
+      this.source = source;
+      this.destin = dest;
+      this.departInfo = departInfo;
+      this.arriveInfo = arriveInfo;
+    }
+
+    Flight (String flightNum, String source, String departInfo, String dest, String arriveInfo) {
+      this.flightNum = Integer.parseInt(flightNum);
       this.source = source;
       this.destin = dest;
       this.departInfo = departInfo;
