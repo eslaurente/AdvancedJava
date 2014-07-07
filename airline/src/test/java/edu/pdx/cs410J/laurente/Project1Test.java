@@ -77,4 +77,12 @@ public class Project1Test extends InvokeMainTestCase {
     System.out.println(result.getOut());
     assertTrue(result.getOut().contains("Hawaiian Airlines with 1 flight: Flight 234 departs PDX at 03/02/2014 04:53 arrives HNL at 03/02/2014 21:53"));
   }
+
+  @Test
+  public void testReadmeOption() {
+    MainMethodResult result = invokeMain("-print", "-README","Hawaiian Airlines", "234", "PDX", "3/2/2014 4:53", "HNL", "3/2/2014 21:53");
+    System.out.println(result.getOut());
+    assertTrue(result.getOut().contains("This program prompts the user for an arline flight information"));
+
+  }
 }
