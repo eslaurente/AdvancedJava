@@ -105,10 +105,25 @@ public class Project1 {
     System.exit(0);
   }
 
+  /**
+   * This method will print to standard out the string representation of an Airline object. This version
+   * of the program only prints out the first and only flight that an airline has.
+   * @param anAirline   The Airline object to be printed
+   */
   public static void printAirlineFlightInfo(Airline anAirline) {
-    System.out.println(anAirline.toString() + ": " + anAirline.getFlights().toArray()[0].toString());
+    if (anAirline != null) {
+      System.out.println(anAirline.toString() + ": " + anAirline.getFlights().toArray()[0].toString());
+    }
   }
 
+  /**
+   * This method parses the optional portion of the arguments
+   * @param args              The full arguments to be parsed
+   * @return                  The List of String that contains the optional arguments found from args
+   * @throws ParseException   Throws this exception if: there is a duplicate of the option; an argument with a
+   *                          suffix of '-' is not valid optional argument; or an option is found after a non-optional
+   *                          argument is encountered.
+   */
   public static List<String> getOptions(String[] args) throws ParseException{
     List<String> options = new ArrayList<String>();
     int nonOptionArgCount = 0;
@@ -133,10 +148,20 @@ public class Project1 {
     return options;
   }
 
+  /**
+   * This method checks to see if an airport code has exactly 3 characters representing a valid airport code
+   * @param code    The airport code to be checked
+   * @return        The boolean value: true if <code>code</code> is a valid airport code, false if not
+   */
   public static boolean isValidAirportCode(String code) {
     return code.length() == 3? true : false;
   }
 
+  /**
+   * This method prints to the system's error stream the detailed usage information of the program. If the
+   * there is a precedingMessage string, it will print that first and then the usage information.
+   * @param precedingMessage    The message to print first before the usage information
+   */
   public static void printUsageMessageError(String precedingMessage) {
     if (precedingMessage != null && !precedingMessage.equals("")) {
       System.err.println(precedingMessage + "\n" + VERBOSE_USAGE);
@@ -147,8 +172,8 @@ public class Project1 {
 
 
   /**
-   * This method
-   * @return
+   * This method uses StringBuilder to build the program's usage information string
+   * @return    The program's usage information String
    */
   private static String buildUsageString() {
     StringBuilder usage = new StringBuilder();
