@@ -22,6 +22,10 @@ public class Project1 {
   public static final String OPTION_README = "-README";
   public static final String VERBOSE_USAGE = buildUsageString();
 
+  /**
+   *  The main method
+   * @param args    The command line arguments used for parsing for the airline and flight information
+   */
   public static void main(String[] args) {
     Airline anAirline = null;
     String name, flightNumber, src, departTime, dest, arrivalTime;
