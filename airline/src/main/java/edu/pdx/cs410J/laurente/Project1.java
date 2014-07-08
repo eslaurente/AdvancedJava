@@ -33,7 +33,10 @@ public class Project1 {
     List<String> options;
     //Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
     //System.err.print("Missing command line arguments");
-
+    if (args.length == 0) {
+      printUsageMessageError("Missing command line arguments");
+      System.exit(1);
+    }
     //Parse option arguments and collect them.
     try {
       options = getOptions(args);
@@ -43,12 +46,11 @@ public class Project1 {
       System.exit(1);
       throw new AssertionError("Unreachable statement reached.");
     }
-
     if (args.length - argStartingPosition < 6) {
-      printUsageMessageError("Invalid argument: Not enough information about the flight was provided");
+      printUsageMessageError("Insufficient number of arguments: Not enough information about the flight was given");
       System.exit(1);
     }
-    else if (options.contains(OPTION_README)) { //since README has high precedence, display it ignore parsing
+    else if (options.contains(OPTION_README)) { //since -README has high precedence, display it ignore parsing
       printReadme();
       System.exit(0);
     }

@@ -1,5 +1,6 @@
 package edu.pdx.cs410J.laurente;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 import edu.pdx.cs410J.InvokeMainTestCase;
@@ -24,21 +25,24 @@ public class Project1Test extends InvokeMainTestCase {
   public void testNoCommandLineArguments() {
     MainMethodResult result = invokeMain();
     assertEquals(new Integer(1), result.getExitCode());
-    assertTrue(result.getErr().contains( "Missing command line arguments" ));
+    assertTrue(result.getErr().contains("Missing command line arguments"));
   }
 
+  @Ignore
   @Test
   public void checkUsagePrinting() {
     MainMethodResult result = invokeMain();
     System.out.print(result.getErr());
   }
 
+  @Ignore
   @Test
   public void testDateTimeFormatPrinting() {
     MainMethodResult result = invokeMain("Hawaiian Airlines", "234", "PDX", "3/02/2014 4:53", "HNL", "3/02/2014 21:53");
     assertEquals("03/02/2014 04:53", result.getOut());
   }
 
+  @Ignore
   @Test
   public void testPrintOption() {
     MainMethodResult result = invokeMain("-print", "Hawaiian Airlines", "234", "PDX", "3/02/2014 4:53", "HNL", "3/02/2014 21:53");
@@ -55,8 +59,7 @@ public class Project1Test extends InvokeMainTestCase {
   @Test
   public void printErrWhenPrintArgWithNotEnoughRequiredArgs() {
     MainMethodResult result = invokeMain("-print", "twothreefour", "PDX", "3/02/2014 4:53", "HNL", "3/02/2014 21:53");
-    assertTrue(result.getErr().contains("Invalid argument: Not enough information about the flight was provided"));
-    System.out.println(result.getErr());
+    assertTrue(result.getErr().contains("Insufficient number of arguments: Not enough information about the flight was given"));
   }
 
   @Test
@@ -74,14 +77,12 @@ public class Project1Test extends InvokeMainTestCase {
   @Test
   public void testPrintOptionWithValidArgs() {
     MainMethodResult result = invokeMain("-print", "Hawaiian Airlines", "234", "PDX", "3/2/2014 4:53", "HNL", "3/2/2014 21:53");
-    System.out.println(result.getOut());
     assertTrue(result.getOut().contains("Hawaiian Airlines with 1 flight: Flight 234 departs PDX at 03/02/2014 04:53 arrives HNL at 03/02/2014 21:53"));
   }
 
   @Test
   public void testReadmeOption() {
     MainMethodResult result = invokeMain("-print", "-README","Hawaiian Airlines", "234", "PDX", "3/2/2014 4:53", "HNL", "3/2/2014 21:53");
-    System.out.println(result.getOut());
     assertTrue(result.getOut().contains("This program prompts the user for an arline flight information"));
 
   }
