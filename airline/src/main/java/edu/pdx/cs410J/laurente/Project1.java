@@ -28,7 +28,7 @@ public class Project1 {
    */
   public static void main(String[] args) {
     Airline anAirline = null;
-    String name, flightNumber, src, departTime, dest, arrivalTime;
+    String name, flightNumber, src, departDate, departTime, departure, dest, arrivalDate, arrivalTime, arrival;
     int argStartingPosition = 0; //Actual starting index offset by the number of options
     List<String> options;
     //Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
@@ -46,14 +46,15 @@ public class Project1 {
       System.exit(1);
       throw new AssertionError("Unreachable statement reached.");
     }
-    if (args.length - argStartingPosition < 6) {
-      printUsageMessageError("Insufficient number of arguments: Not enough information about the flight was given");
-      System.exit(1);
-    }
-    else if (options.contains(OPTION_README)) { //since -README has high precedence, display it ignore parsing
+    if (options.contains(OPTION_README)) { //since -README has high precedence, display it ignore parsing
       printReadme();
       System.exit(0);
     }
+    else if (args.length - argStartingPosition < 8) {
+      printUsageMessageError("Insufficient number of arguments: Not enough information about the flight was given");
+      System.exit(1);
+    }
+
     //--Begin parsing the rest of the arguments --
     //Get name
     name = args[argStartingPosition];
@@ -78,29 +79,33 @@ public class Project1 {
       System.exit(1);
     }
     //Get departure date and time
+    departDate = args[argStartingPosition + 3];
+    departTime = args[argStartingPosition + 4];
     try {
-      departTime = formatDateTime(args[argStartingPosition + 3]);
+      departure = formatDateTime(departDate + " " + departTime);
     } catch (ParseException e) {
-      printUsageMessageError(e.getMessage());
+      printUsageMessageError("Invalid argument: For the flight's depature, " + e.getMessage());
       System.exit(1);
       throw new AssertionError("Unreachable statement reached.");
     }
     //Get destination airport code
-    dest = args[argStartingPosition + 4].toUpperCase(); //use upper-case format
+    dest = args[argStartingPosition + 5].toUpperCase(); //use upper-case format
     if (!isValidAirportCode(dest) || dest.equals("")) {
       printUsageMessageError("Error: the destination airport code \"" + dest + "\" is not a valid code");
       System.exit(1);
     }
     //Get arrival date and time
+    arrivalDate = args[argStartingPosition + 6];
+    arrivalTime = args[argStartingPosition + 7];
     try {
-      arrivalTime = formatDateTime(args[argStartingPosition + 5]);
+      arrival = formatDateTime(arrivalDate + " " + arrivalTime);
     } catch (ParseException e) {
-      printUsageMessageError(e.getMessage());
+      printUsageMessageError("Invalid argument: For the flight's arrival, " + e.getMessage());
       System.exit(1);
       throw new AssertionError("Unreachable statement reached.");
     }
     //Create airline object
-    anAirline = new Airline(name, new Flight(flightNumber, src, departTime, dest, arrivalTime));
+    anAirline = new Airline(name, new Flight(flightNumber, src, departure, dest, arrival));
     if (anAirline == null) {
       printUsageMessageError("Error: Something serious went wrong");
       System.exit(1);
@@ -144,7 +149,7 @@ public class Project1 {
           throw new ParseException("Invalid argument: \"" + currentArg + "\" cannot be duplicated", -1);
         }
       }
-      else if (nonOptionArgCount <= 0 && currentArg.startsWith("-")) {
+      else if (currentArg.startsWith("-")) {
         throw new ParseException("Invalid argument: \"" + currentArg + "\" option not recognized", -1);
       }
       else {
@@ -228,7 +233,7 @@ public class Project1 {
       formattedDate = dateFormat.parse(dateTimeArg);
       resultingStr.append(dateFormat.format(formattedDate));
     } catch (ParseException e) {
-      throw new ParseException("Invalid argument: Please enter a valid date (mm/dd/yyyy format) and/or time (24-hour time format)", -1);
+      throw new ParseException("date/time arguments must be in this format (24-hour time): mm/dd/yyyy hh/mm", -1);
     }
     return resultingStr.toString();
   }
@@ -237,19 +242,19 @@ public class Project1 {
    * This method prints the hard-coded README to standard out, showing a brief description of the what this program does
    */
   public static void printReadme() {
-    final String HEADER = "--------------------------A I R L I N E   F L I G H T   I N F O   P R O G R A M---------------------------------------";
+    final String HEADER = "-------------------------------A I R L I N E   F L I G H T   I N F O   P R O G R A M-----------------------------------------";
     final String README = "This program prompts the user for an arline flight information, and allows the user to print " +
-      "out details about\nan airline's flight information. There are six (6) arguments required for the airline flight info in " +
-      "this exact order:\n\t<name> <flight number> <airport source> <departure date/time> " +
-      "<aiport destination> <arrival date/time>\nThe date and time arguments must be in mm/dd/yyyy hh:mm format "  +
+      "out details about\nan airline's flight information. There are eight (8) arguments required for the airline flight info in " +
+      "this exact order:\n  <airline name> <flight number> <airport src> <depart date> <depart time> " +
+      "<airport dest> <arrive date> <arrive time>\nThe date and time arguments must be in mm/dd/yyyy hh:mm format "  +
       "and the time portion is in the 24-hour format.\nSee usage details below.\n\n[EXAMPLE]\nHere is a complete command line usage example with the " +
       "printing option:\n\tjava edu.pdx.cs410J.laurente.Project1 -print \"Hawaiian Airlines\" 234 PDX 03/02/2014 04:53 HNL 03/02/2014 21:53\nThe output " +
       "for this would be:\n\tHawaiian Airlines with 1 flight: Flight 234 departs PDX at 03/02/2014 04:53 arrives HNL at 03/02/2014 21:53\n";
-    System.out.println("----------------------------------------------------------------------------------------------------------------------");
+    System.out.println("-----------------------------------------------------------------------------------------------------------------------------");
     System.out.println(HEADER);
-    System.out.println("----------------------------------------------------------------------------------------------------------------------");
+    System.out.println("-----------------------------------------------------------------------------------------------------------------------------");
     System.out.println(README);
-    System.out.println("----------------------------------------------------------------------------------------------------------------------");
+    System.out.println("-----------------------------------------------------------------------------------------------------------------------------");
     System.out.println(VERBOSE_USAGE);
   }
 }
