@@ -116,7 +116,7 @@ public class Project1 {
    * of the program only prints out the first and only flight that an airline has.
    * @param anAirline   The Airline object to be printed
    */
-  public static void printAirlineFlightInfo(Airline anAirline) {
+  private static void printAirlineFlightInfo(Airline anAirline) {
     if (anAirline != null) {
       System.out.println(anAirline.toString() + ": " + anAirline.getFlights().toArray()[0].toString());
     }
@@ -130,7 +130,7 @@ public class Project1 {
    *                          suffix of '-' is not valid optional argument; or an option is found after a non-optional
    *                          argument is encountered.
    */
-  public static List<String> getOptions(String[] args) throws ParseException{
+  private static List<String> getOptions(String[] args) throws ParseException{
     List<String> options = new ArrayList<String>();
     int nonOptionArgCount = 0;
     for (String currentArg : args) {
@@ -159,7 +159,7 @@ public class Project1 {
    * @param code    The airport code to be checked
    * @return        The boolean value: true if <code>code</code> is a valid airport code, false if not
    */
-  public static boolean isValidAirportCode(String code) {
+  private static boolean isValidAirportCode(String code) {
     return code.length() == 3? true : false;
   }
 
@@ -168,7 +168,7 @@ public class Project1 {
    * there is a precedingMessage string, it will print that first and then the usage information.
    * @param precedingMessage    The message to print first before the usage information
    */
-  public static void printUsageMessageError(String precedingMessage) {
+  private static void printUsageMessageError(String precedingMessage) {
     if (precedingMessage != null && !precedingMessage.equals("")) {
       System.err.println(precedingMessage + "\n" + VERBOSE_USAGE);
     } else {
@@ -203,7 +203,7 @@ public class Project1 {
    * @param numOfSpaces The number of spaces to concatenate
    * @return The space String object from the tabs object
    */
-  public static String tabulate(int numOfSpaces) {
+  private static String tabulate(int numOfSpaces) {
     StringBuilder tabs = new StringBuilder();
     for (int i = 0; i < numOfSpaces; ++i) {
       tabs.append(" ");
@@ -219,7 +219,7 @@ public class Project1 {
    * @return                    The formatted string of the date and time argument.
    * @exception ParseException  An error is thrown if dateTimeArg is not of the form "MM/dd/yyy HH:mm"
    */
-  public static String formatDateTime(String dateTimeArg) throws ParseException {
+  private static String formatDateTime(String dateTimeArg) throws ParseException {
     StringBuilder resultingStr = new StringBuilder();
     SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm"); //capital HH means to use 24-hour format
     dateFormat.setLenient(false); //to disallow dates like 03/33/2014, etc
