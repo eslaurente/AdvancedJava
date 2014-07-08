@@ -6,8 +6,11 @@ import edu.pdx.cs410J.AbstractFlight;
 import java.util.ArrayList;
 import java.util.Collection;
 
+
 /**
- * Created by emerald on 7/2/14.
+ * This class represents an airline which has a collection of flights. This class extends the AbstractAirline abstract
+ * class. It contains information about an airline's name, along with storing and retrieving information about it and its
+ * collection of flights.
  */
 public class Airline extends AbstractAirline {
   private String name;
