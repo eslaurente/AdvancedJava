@@ -34,49 +34,46 @@ public class Project1 {
     //Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
     //System.err.print("Missing command line arguments");
     if (args.length == 0) {
-      printUsageMessageError("Missing command line arguments");
-      System.exit(1);
+      printUsageMessageErrorAndExit("Missing command line arguments");
     }
     //Parse option arguments and collect them.
     try {
       options = getOptions(args);
       argStartingPosition = options.size(); //offset the rest of arguments starting index
     } catch (ParseException e) {
-      printUsageMessageError(e.getMessage());
-      System.exit(1);
+      printUsageMessageErrorAndExit(e.getMessage());
       throw new AssertionError("Unreachable statement reached.");
     }
     if (options.contains(OPTION_README)) { //since -README has high precedence, display it ignore parsing
       printReadme();
-      System.exit(0);
+      System.exit(0); //terminate immediately
     }
     else if (args.length - argStartingPosition < 8) {
-      printUsageMessageError("Insufficient number of arguments: Not enough information about the flight was given");
-      System.exit(1);
+      printUsageMessageErrorAndExit("Insufficient number of arguments: Not enough information about the flight was given");
+    }
+    else if (args.length - argStartingPosition > 8) {
+      printUsageMessageErrorAndExit("Extraneous argument(s) encountered: only eight (8) valid arguments is required");
     }
 
     //--Begin parsing the rest of the arguments --
     //Get name
     name = args[argStartingPosition];
     if (name.equals("")) {
-      printUsageMessageError("Invalid argument: Airline name cannot be empty");
-      System.exit(1);
+      printUsageMessageErrorAndExit("Invalid argument: Airline name cannot be empty");
     }
     //Get flight number
     try {
       flightNumber = args[argStartingPosition + 1];
       int unused = Integer.parseInt(flightNumber);
     } catch (NumberFormatException e) {
-      printUsageMessageError("Invalid argument: flight number must be a valid integer");
-      System.exit(1);
+      printUsageMessageErrorAndExit("Invalid argument: flight number must be a valid integer");
       throw new AssertionError("Unreachable statement reached.");
 
     }
     //Get the source airport code
     src = args[argStartingPosition + 2].toUpperCase(); //use upper-case format
     if (!isValidAirportCode(src) || src.equals("")) {
-      printUsageMessageError("Error: the source airport code \"" + src + "\" is not a valid code");
-      System.exit(1);
+      printUsageMessageErrorAndExit("Error: the source airport code \"" + src + "\" is not a valid code");
     }
     //Get departure date and time
     departDate = args[argStartingPosition + 3];
@@ -84,15 +81,13 @@ public class Project1 {
     try {
       departure = formatDateTime(departDate + " " + departTime);
     } catch (ParseException e) {
-      printUsageMessageError("Invalid argument: For the flight's depature, " + e.getMessage());
-      System.exit(1);
+      printUsageMessageErrorAndExit("Invalid argument: For the flight's depature, " + e.getMessage());
       throw new AssertionError("Unreachable statement reached.");
     }
     //Get destination airport code
     dest = args[argStartingPosition + 5].toUpperCase(); //use upper-case format
     if (!isValidAirportCode(dest) || dest.equals("")) {
-      printUsageMessageError("Error: the destination airport code \"" + dest + "\" is not a valid code");
-      System.exit(1);
+      printUsageMessageErrorAndExit("Error: the destination airport code \"" + dest + "\" is not a valid code");
     }
     //Get arrival date and time
     arrivalDate = args[argStartingPosition + 6];
@@ -100,15 +95,13 @@ public class Project1 {
     try {
       arrival = formatDateTime(arrivalDate + " " + arrivalTime);
     } catch (ParseException e) {
-      printUsageMessageError("Invalid argument: For the flight's arrival, " + e.getMessage());
-      System.exit(1);
+      printUsageMessageErrorAndExit("Invalid argument: For the flight's arrival, " + e.getMessage());
       throw new AssertionError("Unreachable statement reached.");
     }
     //Create airline object
     anAirline = new Airline(name, new Flight(flightNumber, src, departure, dest, arrival));
     if (anAirline == null) {
-      printUsageMessageError("Error: Something serious went wrong");
-      System.exit(1);
+      printUsageMessageErrorAndExit("Error: Something serious went wrong");
     }
     if (options.contains(OPTION_PRINT)) { //Print airline info to standard out if there is -print
       printAirlineFlightInfo(anAirline);
@@ -169,16 +162,18 @@ public class Project1 {
   }
 
   /**
-   * This method prints to the system's error stream the detailed usage information of the program. If the
-   * there is a precedingMessage string, it will print that first and then the usage information.
+   * This method prints to the system's error stream the detailed usage information of the program then exits
+   * the program with and exit code of 1. If the there is a precedingMessage string, it will print that first and
+   * then the usage information.
    * @param precedingMessage    The message to print first before the usage information
    */
-  private static void printUsageMessageError(String precedingMessage) {
+  private static void printUsageMessageErrorAndExit(String precedingMessage) {
     if (precedingMessage != null && !precedingMessage.equals("")) {
       System.err.println(precedingMessage + "\n" + VERBOSE_USAGE);
     } else {
       System.err.println(VERBOSE_USAGE);
     }
+    System.exit(1);
   }
 
 
@@ -188,7 +183,7 @@ public class Project1 {
    */
   private static String buildUsageString() {
     StringBuilder usage = new StringBuilder();
-    usage.append("usage: java edu.pdx.cs410J.laurente.Project1 [options] <args>\n");
+    usage.append("\nusage: java edu.pdx.cs410J.laurente.Project1 [options] <args>\n");
     usage.append("  args are (in this order):\n");
     usage.append("    ").append(USAGE_NAME).append("\n");
     usage.append("    ").append(USAGE_FLIGHTNUMBER).append("\n");
@@ -198,7 +193,7 @@ public class Project1 {
     usage.append("    ").append(USAGE_ARRIVAL).append("\n");
     usage.append("  options are (options may appear in any order):\n");
     usage.append("    ").append(USAGE_PRINT).append("\n");
-    usage.append("    ").append(USAGE_README).append("\n");
+    usage.append("    ").append(USAGE_README);
     return usage.toString();
   }
 
