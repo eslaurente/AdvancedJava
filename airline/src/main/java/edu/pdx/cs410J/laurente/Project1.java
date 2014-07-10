@@ -57,47 +57,17 @@ public class Project1 {
 
     //--Begin parsing the rest of the arguments --
     //Get name
-    name = args[argStartingPosition];
-    if (name.equals("")) {
-      printUsageMessageErrorAndExit("Invalid argument: Airline name cannot be empty");
-    }
+    name = getAirlineName(args, argStartingPosition);
     //Get flight number
-    try {
-      flightNumber = args[argStartingPosition + 1];
-      int unused = Integer.parseInt(flightNumber);
-    } catch (NumberFormatException e) {
-      printUsageMessageErrorAndExit("Invalid argument: flight number must be a valid integer");
-      throw new AssertionError("Unreachable statement reached.");
-
-    }
+    flightNumber = getFlightNumber(args, argStartingPosition);
     //Get the source airport code
-    src = args[argStartingPosition + 2].toUpperCase(); //use upper-case format
-    if (!isValidAirportCode(src) || src.equals("")) {
-      printUsageMessageErrorAndExit("Error: the source airport code \"" + src + "\" is not a valid code");
-    }
+    src = getSourceAirportCode(args, argStartingPosition);
     //Get departure date and time
-    departDate = args[argStartingPosition + 3];
-    departTime = args[argStartingPosition + 4];
-    try {
-      departure = formatDateTime(departDate + " " + departTime);
-    } catch (ParseException e) {
-      printUsageMessageErrorAndExit("Invalid argument: For the flight's depature, " + e.getMessage());
-      throw new AssertionError("Unreachable statement reached.");
-    }
+    departure = getDateAndTimeDateDeparture(args, argStartingPosition);
     //Get destination airport code
-    dest = args[argStartingPosition + 5].toUpperCase(); //use upper-case format
-    if (!isValidAirportCode(dest) || dest.equals("")) {
-      printUsageMessageErrorAndExit("Error: the destination airport code \"" + dest + "\" is not a valid code");
-    }
+    dest = getDestAirportCode(args, argStartingPosition);
     //Get arrival date and time
-    arrivalDate = args[argStartingPosition + 6];
-    arrivalTime = args[argStartingPosition + 7];
-    try {
-      arrival = formatDateTime(arrivalDate + " " + arrivalTime);
-    } catch (ParseException e) {
-      printUsageMessageErrorAndExit("Invalid argument: For the flight's arrival, " + e.getMessage());
-      throw new AssertionError("Unreachable statement reached.");
-    }
+    arrival = getDateAndTimeArrival(args, argStartingPosition);
     //Create airline object
     anAirline = new Airline(name, new Flight(flightNumber, src, departure, dest, arrival));
     if (anAirline == null) {
@@ -107,6 +77,76 @@ public class Project1 {
       printAirlineFlightInfo(anAirline);
     }
     System.exit(0);
+  }
+
+  private static String getDateAndTimeArrival(String[] args, int argStartingPosition) {
+    String arrivalDate;
+    String arrivalTime;
+    String arrival;
+    arrivalDate = args[argStartingPosition + 6];
+    arrivalTime = args[argStartingPosition + 7];
+    try {
+      arrival = formatDateTime(arrivalDate + " " + arrivalTime);
+    } catch (ParseException e) {
+      printUsageMessageErrorAndExit("Invalid argument: For the flight's arrival, " + e.getMessage());
+      throw new AssertionError("Unreachable statement reached.");
+    }
+    return arrival;
+  }
+
+  private static String getDestAirportCode(String[] args, int argStartingPosition) {
+    String dest;
+    dest = args[argStartingPosition + 5].toUpperCase(); //use upper-case format
+    if (!isValidAirportCode(dest) || dest.equals("")) {
+      printUsageMessageErrorAndExit("Error: the destination airport code \"" + dest + "\" is not a valid code");
+    }
+    return dest;
+  }
+
+  private static String getDateAndTimeDateDeparture(String[] args, int argStartingPosition) {
+    String departDate;
+    String departTime;
+    String departure;
+    departDate = args[argStartingPosition + 3];
+    departTime = args[argStartingPosition + 4];
+    try {
+      departure = formatDateTime(departDate + " " + departTime);
+    } catch (ParseException e) {
+      printUsageMessageErrorAndExit("Invalid argument: For the flight's depature, " + e.getMessage());
+      throw new AssertionError("Unreachable statement reached.");
+    }
+    return departure;
+  }
+
+  private static String getSourceAirportCode(String[] args, int argStartingPosition) {
+    String src;
+    src = args[argStartingPosition + 2].toUpperCase(); //use upper-case format
+    if (!isValidAirportCode(src) || src.equals("")) {
+      printUsageMessageErrorAndExit("Error: the source airport code \"" + src + "\" is not a valid code");
+    }
+    return src;
+  }
+
+  private static String getFlightNumber(String[] args, int argStartingPosition) {
+    String flightNumber;
+    try {
+      flightNumber = args[argStartingPosition + 1];
+      int unused = Integer.parseInt(flightNumber);
+    } catch (NumberFormatException e) {
+      printUsageMessageErrorAndExit("Invalid argument: flight number must be a valid integer");
+      throw new AssertionError("Unreachable statement reached.");
+
+    }
+    return flightNumber;
+  }
+
+  private static String getAirlineName(String[] args, int argStartingPosition) {
+    String name;
+    name = args[argStartingPosition];
+    if (name.equals("")) {
+      printUsageMessageErrorAndExit("Invalid argument: Airline name cannot be empty");
+    }
+    return name;
   }
 
   /**
