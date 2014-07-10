@@ -79,6 +79,12 @@ public class Project1 {
     System.exit(0);
   }
 
+  /**
+   * This method gets the current flight's departure date and time
+   * @param args                  The incoming command line arguments
+   * @param argStartingPosition   The offset index used as the base index
+   * @return                      The current flight's departure date and time as a String object
+   */
   private static String getDateAndTimeArrival(String[] args, int argStartingPosition) {
     String arrivalDate;
     String arrivalTime;
@@ -94,6 +100,12 @@ public class Project1 {
     return arrival;
   }
 
+  /**
+   * This method gets the current flight's airport destination three-letter code name
+   * @param args                  The incoming command line arguments
+   * @param argStartingPosition   The offset index used as the base index
+   * @return                      The current flight's airport destination three-letter code String object
+   */
   private static String getDestAirportCode(String[] args, int argStartingPosition) {
     String dest;
     dest = args[argStartingPosition + 5].toUpperCase(); //use upper-case format
@@ -103,6 +115,12 @@ public class Project1 {
     return dest;
   }
 
+  /**
+   * This method gets the current flight's departure date and time
+   * @param args                  The incoming command line arguments
+   * @param argStartingPosition   The offset index used as the base index
+   * @return                      The current flight's departure date and time as a String object
+   */
   private static String getDateAndTimeDateDeparture(String[] args, int argStartingPosition) {
     String departDate;
     String departTime;
@@ -118,6 +136,12 @@ public class Project1 {
     return departure;
   }
 
+  /**
+   * This method gets the current flight's airport source code three-letter name
+   * @param args                  The incoming command line arguments
+   * @param argStartingPosition   The offset index used as the base index
+   * @return                      The current flight's airport source code
+   */
   private static String getSourceAirportCode(String[] args, int argStartingPosition) {
     String src;
     src = args[argStartingPosition + 2].toUpperCase(); //use upper-case format
@@ -127,6 +151,12 @@ public class Project1 {
     return src;
   }
 
+  /**
+   * This method gets the current flight's flight number
+   * @param args                  The incoming command line arguments
+   * @param argStartingPosition   The offset index used as the base index
+   * @return                      The flight number of the current flight as a String object
+   */
   private static String getFlightNumber(String[] args, int argStartingPosition) {
     String flightNumber;
     try {
@@ -140,6 +170,12 @@ public class Project1 {
     return flightNumber;
   }
 
+  /**
+   * This method checks the 'name' portion of args and parses the airline's name
+   * @param args                  The incoming command line arguments
+   * @param argStartingPosition   The offset index used as the base index
+   * @return                      The name of the airline
+   */
   private static String getAirlineName(String[] args, int argStartingPosition) {
     String name;
     name = args[argStartingPosition];
