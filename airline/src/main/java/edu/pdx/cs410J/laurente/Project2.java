@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * The main class for the CS410J airline Project
  */
-public class Project1 {
+public class Project2 {
   public static final String USAGE_NAME = "name" + tabulate(18) + "The name of the airline";
   public static final String USAGE_FLIGHTNUMBER = "flightNumber" + tabulate(10) + "The flight number";
   public static final String USAGE_SRC = "src" + tabulate(19) + "Three-letter code of departure airport";
