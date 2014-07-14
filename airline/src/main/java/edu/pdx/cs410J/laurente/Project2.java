@@ -207,6 +207,7 @@ public class Project2 {
   private static List<String> getOptions(String[] args) throws ParseException{
     List<String> options = new ArrayList<String>();
     int nonOptionArgCount = 0;
+    //boolean getSuffix = false;
     for (String currentArg : args) {
       if (currentArg.equals(OPTION_PRINT) || currentArg.equals(OPTION_README)) {
         if (nonOptionArgCount > 0) {
