@@ -1,5 +1,8 @@
 package edu.pdx.cs410J.laurente;
 
+import edu.pdx.cs410J.ParserException;
+
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -19,6 +22,7 @@ public class Project2 {
   public static final String USAGE_PRINT = "-print" + tabulate(16) + "Prints a description of the new flight";
   public static final String USAGE_README = "-README" + tabulate(15) + "Prints a README for this project and exits";
   public static final String OPTION_PRINT = "-print";
+  public static final String OPTION_TEXTFILE = "-textFile";
   public static final String OPTION_README = "-README";
   public static final String VERBOSE_USAGE = buildUsageString();
 
@@ -28,7 +32,8 @@ public class Project2 {
    */
   public static void main(String[] args) {
     Airline anAirline = null;
-    String name, flightNumber, src, departDate, departTime, departure, dest, arrivalDate, arrivalTime, arrival;
+    String name, flightNumber, src, departDate, departTime, departure, dest, arrivalDate,
+           arrivalTime, arrival, fileName;
     int argStartingPosition = 0; //Actual starting index offset by the number of options
     List<String> options;
     //Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
@@ -47,6 +52,14 @@ public class Project2 {
     if (options.contains(OPTION_README)) { //since -README has high precedence, display it ignore parsing
       printReadme();
       System.exit(0); //terminate immediately
+    } else if (options.contains(OPTION_TEXTFILE)) {
+      try {
+        fileName = getFileName(options);
+        TextParser parser = new TextParser(fileName);
+        anAirline = (Airline) parser.parse();
+      } catch (Exception e) {
+        printUsageMessageErrorAndExit(e.getMessage());
+      }
     }
     else if (args.length - argStartingPosition < 8) {
       printUsageMessageErrorAndExit("Insufficient number of arguments: Not enough information about the flight was given");
@@ -69,14 +82,53 @@ public class Project2 {
     //Get arrival date and time
     arrival = getDateAndTimeArrival(args, argStartingPosition);
     //Create airline object
-    anAirline = new Airline(name, new Flight(flightNumber, src, departure, dest, arrival));
+    if (options.contains(OPTION_TEXTFILE)) {
+      if (anAirline == null) {
+        printUsageMessageErrorAndExit("Error: flight not added because the airline does not exist");
+      }
+      else if (anAirline.getFlights().size() <= 0) {
+        printUsageMessageErrorAndExit("Error: flight not added because the airline from the file contain no flights to begin with");
+      }
+      anAirline.addFlight(new Flight(flightNumber, src, departure, dest, arrival));
+    }
+    else {
+      anAirline = new Airline(name, new Flight(flightNumber, src, departure, dest, arrival));
+    }
     if (anAirline == null) {
       printUsageMessageErrorAndExit("Error: Something serious went wrong");
     }
     if (options.contains(OPTION_PRINT)) { //Print airline info to standard out if there is -print
       printAirlineFlightInfo(anAirline);
     }
+    if (options.contains(OPTION_TEXTFILE)) {
+      fileName = getFileName(options);
+      if (fileName != null) {
+        writeAirlineFlightInfo(anAirline, fileName);
+      }
+      else {
+        printUsageMessageErrorAndExit("Error: could not retrieve the file name");
+      }
+    }
     System.exit(0);
+  }
+
+  private static void writeAirlineFlightInfo(Airline anAirline, String fileName) {
+    try {
+      TextDumper out = new TextDumper(fileName);
+      out.dump(anAirline);
+    } catch (IOException e) {
+      printUsageMessageErrorAndExit(e.getMessage());
+    }
+  }
+
+  private static String getFileName(List<String> options) {
+    String fileName;
+    int prefixIndex = options.indexOf(OPTION_TEXTFILE);
+    fileName = prefixIndex + 1 <= options.size() - 1 ? options.get(prefixIndex + 1) : null;
+    if (fileName == null) {
+      printUsageMessageErrorAndExit("File error: Could not retrieve file name from command line arguments");
+    }
+    return fileName;
   }
 
   /**
@@ -207,14 +259,21 @@ public class Project2 {
   private static List<String> getOptions(String[] args) throws ParseException{
     List<String> options = new ArrayList<String>();
     int nonOptionArgCount = 0;
-    //boolean getSuffix = false;
+    boolean getSuffix = false; //used to determine if the current argument is a suffix to a command
     for (String currentArg : args) {
-      if (currentArg.equals(OPTION_PRINT) || currentArg.equals(OPTION_README)) {
+      if (getSuffix == true) {
+        options.add(currentArg);
+        getSuffix = false;
+      }
+      else if (currentArg.equals(OPTION_PRINT) || currentArg.equals(OPTION_README) || currentArg.equals(OPTION_TEXTFILE)) {
         if (nonOptionArgCount > 0) {
           throw new ParseException("Invalid argument: \"" + currentArg + "\" optional argument must precede required arguments", -1);
         }
-        if (!options.contains(currentArg)) {
+        if (!options.contains(currentArg) || getSuffix == true) {
           options.add(currentArg);
+          if (currentArg.equals(OPTION_TEXTFILE)) {
+            getSuffix = true; //signal next iteration that next argument is part of the suffix the to the prefix argument
+          }
         } else {
           throw new ParseException("Invalid argument: \"" + currentArg + "\" cannot be duplicated", -1);
         }
