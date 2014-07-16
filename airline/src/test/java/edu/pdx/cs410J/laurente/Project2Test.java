@@ -87,4 +87,11 @@ public class Project2Test extends InvokeMainTestCase {
     assertTrue(result.getOut().contains("This program prompts the user for an arline flight information"));
 
   }
+
+  @Test
+  public void testTextFileOption() {
+    MainMethodResult result = invokeMain("-README", "-textFile", "testFile", "Hawaiian Airlines", "2", "PDX", "3/2/2014", "4:53", "HNL", "3/2/2014", "21:53");
+    System.out.println(result.getOut());
+
+  }
 }

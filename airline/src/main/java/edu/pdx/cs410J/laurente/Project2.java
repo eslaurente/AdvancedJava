@@ -2,10 +2,12 @@ package edu.pdx.cs410J.laurente;
 
 import edu.pdx.cs410J.ParserException;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -20,6 +22,7 @@ public class Project2 {
   public static final String USAGE_DEST = "dest" + tabulate(18) + "Three-letter code of arrival airport";
   public static final String USAGE_ARRIVAL = "arrivalTime" + tabulate(11) + "Arrival date and time (24-hour time)";
   public static final String USAGE_PRINT = "-print" + tabulate(16) + "Prints a description of the new flight";
+  public static final String USAGE_TEXTFILE = "-textFile" + tabulate(13) + "Where to read/write the airline info";
   public static final String USAGE_README = "-README" + tabulate(15) + "Prints a README for this project and exits";
   public static final String OPTION_PRINT = "-print";
   public static final String OPTION_TEXTFILE = "-textFile";
@@ -35,6 +38,7 @@ public class Project2 {
     String name, flightNumber, src, departDate, departTime, departure, dest, arrivalDate,
            arrivalTime, arrival, fileName;
     int argStartingPosition = 0; //Actual starting index offset by the number of options
+    boolean airlineFileExists = true;
     List<String> options;
     //Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
     //System.err.print("Missing command line arguments");
@@ -53,12 +57,34 @@ public class Project2 {
       printReadme();
       System.exit(0); //terminate immediately
     } else if (options.contains(OPTION_TEXTFILE)) {
+      //Open the file pointed to by fileName or create the new file if it does not exist
+      fileName = getFileName(options);
       try {
-        fileName = getFileName(options);
-        TextParser parser = new TextParser(fileName);
-        anAirline = (Airline) parser.parse();
+        File file = new File(fileName);
+        if (!file.exists()) {
+          if(file.createNewFile() == false) {
+            printUsageMessageErrorAndExit("File error: encountered a problem when creating a the file " + fileName);
+          }
+          airlineFileExists = false;
+        }
+        if (airlineFileExists == true) {
+          //if the file exists, open it and parse and extract the airline and flight info in the file
+          TextParser parser = new TextParser(file, getAirlineName(args, argStartingPosition));
+          anAirline = (Airline) parser.parse();
+        }
+        //else: Do not create the file yet. Create the new file only after new airline and the flight is created
       } catch (Exception e) {
-        printUsageMessageErrorAndExit(e.getMessage());
+        if (e instanceof  ParserException) {
+          if (e.getMessage().contains("file is empty")) {
+            printUsageMessageErrorAndExit(e.getMessage() + ". Please delete the file " + fileName + " and try again");
+          }
+          else {
+            printUsageMessageErrorAndExit(e.getMessage());
+          }
+        }
+        else if (e instanceof IOException) {
+          printUsageMessageErrorAndExit("File error: " + e.getMessage());
+        }
       }
     }
     else if (args.length - argStartingPosition < 8) {
@@ -83,31 +109,24 @@ public class Project2 {
     arrival = getDateAndTimeArrival(args, argStartingPosition);
     //Create airline object
     if (options.contains(OPTION_TEXTFILE)) {
-      if (anAirline == null) {
-        printUsageMessageErrorAndExit("Error: flight not added because the airline does not exist");
+      if (airlineFileExists == true) {
+        if (anAirline == null || anAirline.getFlights().size() <= 0) {
+          printUsageMessageErrorAndExit("File malformatted: flight not added because " + getFileName(options) + " does not contain a valid airline data");
+        }
+        //The airline object is valid from the parsed airline info from the file. Add the current flight info to it
+        anAirline.addFlight(new Flight(flightNumber, src, departure, dest, arrival));
+      } else {
+        //The
+        anAirline = new Airline(name, new Flight(flightNumber, src, departure, dest, arrival));
       }
-      else if (anAirline.getFlights().size() <= 0) {
-        printUsageMessageErrorAndExit("Error: flight not added because the airline from the file contain no flights to begin with");
-      }
-      anAirline.addFlight(new Flight(flightNumber, src, departure, dest, arrival));
+      writeAirlineFlightInfo(anAirline, getFileName(options));
     }
-    else {
-      anAirline = new Airline(name, new Flight(flightNumber, src, departure, dest, arrival));
-    }
+    //Check if there is any printing to standard out that needs to be done
     if (anAirline == null) {
       printUsageMessageErrorAndExit("Error: Something serious went wrong");
     }
     if (options.contains(OPTION_PRINT)) { //Print airline info to standard out if there is -print
       printAirlineFlightInfo(anAirline);
-    }
-    if (options.contains(OPTION_TEXTFILE)) {
-      fileName = getFileName(options);
-      if (fileName != null) {
-        writeAirlineFlightInfo(anAirline, fileName);
-      }
-      else {
-        printUsageMessageErrorAndExit("Error: could not retrieve the file name");
-      }
     }
     System.exit(0);
   }
@@ -124,7 +143,7 @@ public class Project2 {
   private static String getFileName(List<String> options) {
     String fileName;
     int prefixIndex = options.indexOf(OPTION_TEXTFILE);
-    fileName = prefixIndex + 1 <= options.size() - 1 ? options.get(prefixIndex + 1) : null;
+    fileName = prefixIndex + 1 <= options.size() - 1 ? new String(options.get(prefixIndex + 1) + ".flt") : null;
     if (fileName == null) {
       printUsageMessageErrorAndExit("File error: Could not retrieve file name from command line arguments");
     }
@@ -244,7 +263,25 @@ public class Project2 {
    */
   private static void printAirlineFlightInfo(Airline anAirline) {
     if (anAirline != null) {
-      System.out.println(anAirline.toString() + ": " + anAirline.getFlights().toArray()[0].toString());
+      int size = anAirline.getFlights().size();
+      if (size == 1) {
+        System.out.println(anAirline.toString() + ": " + anAirline.getFlights().toArray()[0].toString());
+      }
+      else if (size > 1) {
+        List<Object> listFlights = Arrays.asList((anAirline.getFlights()).toArray());
+        StringBuilder output = new StringBuilder();
+        output.append(anAirline.toString()).append(":\n");
+        for (int i = 0; i < size; ++i) {
+          Flight flight = (Flight)listFlights.get(i);
+          output.append("\t").append(flight.toString());
+          if (i < size - 1) {
+            output.append("\n");
+          }
+        }
+        System.out.print(output);
+      }
+    } else {
+      printUsageMessageErrorAndExit("Error: cannot print the flight information of a nonexistent airline");
     }
   }
 
@@ -329,6 +366,7 @@ public class Project2 {
     usage.append("    ").append(USAGE_ARRIVAL).append("\n");
     usage.append("  options are (options may appear in any order):\n");
     usage.append("    ").append(USAGE_PRINT).append("\n");
+    usage.append("    ").append(USAGE_TEXTFILE).append("\n");
     usage.append("    ").append(USAGE_README);
     return usage.toString();
   }

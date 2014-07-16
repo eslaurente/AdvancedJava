@@ -50,11 +50,11 @@ public class TextDumper implements AirlineDumper {
       Iterator<Flight> iter = airline.getFlights().iterator();
       while (iter.hasNext()) {
         currentFlight = iter.next();
-        toWrite.append("\t").append(currentFlight.getNumber()).append(" ");
+        toWrite.append("    ").append(currentFlight.getNumber()).append(" ");
         toWrite.append(currentFlight.getSource()).append(" ");
         toWrite.append(currentFlight.getDepartureString()).append(" ");
         toWrite.append(currentFlight.getDestination()).append(" ");
-        toWrite.append(currentFlight.getArrivalString()).append(" ").append("\n");
+        toWrite.append(currentFlight.getArrivalString()).append("\n");
       }
       writer.print(toWrite.toString());
       writer.flush();
