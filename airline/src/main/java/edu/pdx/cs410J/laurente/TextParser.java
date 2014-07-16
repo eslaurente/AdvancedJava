@@ -4,26 +4,37 @@ import edu.pdx.cs410J.AbstractAirline;
 import edu.pdx.cs410J.AirlineParser;
 import edu.pdx.cs410J.ParserException;
 
-import javax.swing.text.html.parser.Parser;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import java.io.*;
 import java.util.*;
 
 /**
- * Created by emerald on 7/13/14.
+ * This class implements an AirlineParser, from which the parse() method retrieves an airline's data and its flight(s)
+ * from a valid file and parses the specific data and checks for malformatted patterns that invalidate the file. A new
+ * Airline object is created from the parsing.
+ * The general format for reading and parsing from a file is:
+ * <airline name> <number of flights> flight(s):
+ *     <flight1 flight number> <source> <depart date> <depart time> <dest> <arrive date> <arrive time>
+ *     <flight2 flight number> <source> <depart date> <depart time> <dest> <arrive date> <arrive time>
+ *     etc...<end of file>
  */
 public class TextParser implements AirlineParser {
   private LineNumberReader lineReader;
   private Airline airline;
   private String airlineName;
-  private String expectedAirlineName;
+  private String expectedAirlineName; //used to check if the name provided from the command line matches the file
   private int numberOfFlights;
+  private boolean fileIsEmpty;
 
-  /*
-    Constructors
+  //Constructors
+  /**
+   * Constructor that sets up the class field members.
+   * @param file                  The FileReader object that is used to access the file and to be wrapped by a
+   *                              LineNumberReader object
+   * @param expectedAirlineName   The airline name that is passed from the command line. This is used to check for
+   *                              mismatching names with the Airline object's name
    */
   TextParser (FileReader file, String expectedAirlineName) {
     this.lineReader = new LineNumberReader(file);
@@ -31,20 +42,35 @@ public class TextParser implements AirlineParser {
     this.airlineName = null;
     this.expectedAirlineName = expectedAirlineName;
     this.numberOfFlights = 0;
+    this.fileIsEmpty = false;
   }
 
+  /**
+   * Constructor that calls the TextParser(FileReader) constructor and wraps a File object with it
+   * @param file                    The File ojbect that refers to the source data file for parsing
+   * @param expectedAirlineName     The expected airline name
+   * @throws FileNotFoundException  Something went wrong when trying to create or access the file
+   */
   TextParser (File file, String expectedAirlineName) throws FileNotFoundException {
     this(new FileReader(file), expectedAirlineName);
   }
 
+  /**
+   * Constructor that calls the TextParser(File) constructor
+   * @param fileName                The fileName that refers to the source data file for parsing
+   * @param expectedAirlineName     The expected airline name
+   * @throws FileNotFoundException  Something went wrong when trying to create a new File ojbect
+   */
   TextParser (String fileName, String expectedAirlineName) throws FileNotFoundException{
     this(new File(fileName), expectedAirlineName);
   }
 
   /**
-   * Parses some source and returns an airline.
-   *
-   * @throws edu.pdx.cs410J.ParserException If the source is malformatted.
+   * This method parses a source data file and creates a new Airline object with from its flight information parsed
+   * individually
+   * @return                  The newly-created airline from parsing. A null value will be returned if any uncaught
+   *                          parsing exceptions propagate and will be caught outside of this class
+   * @throws ParserException  Thrown if the file is malformatted or IOException is caught during parsing
    */
   @Override
   public AbstractAirline parse() throws ParserException {
@@ -66,7 +92,6 @@ public class TextParser implements AirlineParser {
         }
         else {
           //parse each flight the airline has
-          //System.err.println("currentLine: " + currentLine);
           this.airline.addFlight(parseAFlight(currentLine)); //parse each flight read and add it to the airline
           ++numOfFlightLines;
         }
@@ -87,15 +112,24 @@ public class TextParser implements AirlineParser {
 
     }
     if (this.airline == null && this.lineReader.getLineNumber() == 0) {
-      throw new ParserException("File malformatted: file is empty");
+      this.fileIsEmpty = true;
     }
     return this.airline;
   }
 
+  /**
+   * This method parses the first line of the source data file for the airline header and extracts the airline name and
+   * the number of flights the airline should have
+   * @param header            The header line of the source data file
+   * @throws ParserException  Thrown if any file-malformatted case is encountered
+   */
   public void parseAirlineHeader(String header) throws ParserException {
     List<String> headerArray = new ArrayList<String>(Arrays.asList(header.split("\\s")));
     List<String> nameSubList = null;
     int indexOfFlightsWord = headerArray.indexOf("flight(s):");
+    if (indexOfFlightsWord == -1) {
+      throw new ParserException("File malformatted: No airline header found");
+    }
     int indexOfNumOfFlights = indexOfFlightsWord - 1;
     try {
       this.numberOfFlights = Integer.parseInt(headerArray.get(indexOfNumOfFlights));
@@ -114,41 +148,54 @@ public class TextParser implements AirlineParser {
       throw new ParserException("File malformatted: The airline header must contain an airline name");
     }
     else if (this.expectedAirlineName != null && (!this.expectedAirlineName.equals(this.airlineName))) {
-      throw new ParserException("File malformatted: " + this.airlineName + " airline name in file does not match " + this.expectedAirlineName);
+      throw new ParserException("File malformatted: " +  this.expectedAirlineName + " airline name does not match name, " + this.airlineName + ", in file");
     }
   }
 
+  /**
+   * This method parses a flight data line from the file, validating each element in the line for their respective formats
+   * @param flightInfoLine    The current line to be parsed as a string
+   * @return                  The new Flight object created from a successful parsing of a line from a valid airline file
+   * @throws ParserException  Thrown if any of the helper methods throws any ParserException, and caught in the parse() method
+   */
   private Flight parseAFlight(String flightInfoLine) throws ParserException {
     String flightNumber, source, departDate, departTime, departure, dest, arrivalDate, arrivalTime, arrival;
     List<String> flightData = new ArrayList<String>(Arrays.asList(flightInfoLine.split("\\s")));
-    //System.err.println("Flight data: " + flightData);
     flightData.removeAll(Arrays.asList("", null)); //remove empty elements from flightData arrays list
-    //System.err.println("Flight data: " + flightData);
-    if (flightData.size() != 7) {
-      throw new ParserException("File malformatted: flights should have 7 pieces of data, but current flight does not have enough");
+    if (flightData.size() < 7) {
+      throw new ParserException("File malformatted: a flight should have 7 arguments for data, but current flight only has " + flightData.size());
     }
-    //parse flight number
-    flightNumber = parseFlightNumber(flightData.get(0));
-    //parse flight source airport code
-    source = flightData.get(1);
-    parseAirportCode(source);
-    //parse flight departure date and time
-    departDate = flightData.get(2);
-    departTime = flightData.get(3);
-    departure = departDate + " " + departTime;
-    parseDateAndTime(departure);
-    //parse flight destination airport code
-    dest = flightData.get(4);
-    parseAirportCode(dest);
-    //parse flight arrival time
-    arrivalDate = flightData.get(5);
-    arrivalTime = flightData.get(6);
-    arrival = arrivalDate + " " + arrivalTime;
-    parseDateAndTime(arrival);
-    Flight aFlight = new Flight(flightNumber, source, departure, dest, arrival);
-    return aFlight;
+    else if (flightData.size() > 7) {
+      throw new ParserException("File malformatted: extraneous arguments found when there should only be 7");
+    }
+      //parse flight number
+      flightNumber = parseFlightNumber(flightData.get(0));
+      //parse flight source airport code
+      source = flightData.get(1);
+      parseAirportCode(source);
+      //parse flight departure date and time
+      departDate = flightData.get(2);
+      departTime = flightData.get(3);
+      departure = departDate + " " + departTime;
+      parseDateAndTime(departure);
+      //parse flight destination airport code
+      dest = flightData.get(4);
+      parseAirportCode(dest);
+      //parse flight arrival time
+      arrivalDate = flightData.get(5);
+      arrivalTime = flightData.get(6);
+      arrival = arrivalDate + " " + arrivalTime;
+      parseDateAndTime(arrival);
+
+    return new Flight(flightNumber, source, departure, dest, arrival);
   }
 
+  /**
+   * This method validates a flight's flight number
+   * @param fNumber           The flight number as a string
+   * @return                  The string value of the flightNumber
+   * @throws ParserException  Thrown if fNumber is not a valid integer
+   */
   private String parseFlightNumber(String fNumber) throws ParserException {
     int flightNumber;
     try {
@@ -159,32 +206,63 @@ public class TextParser implements AirlineParser {
     return String.valueOf(flightNumber);
   }
 
-  private void parseDateAndTime(String departure) throws ParserException {
+  /**
+   * This method validates a date and time combination string by using SimpleDateFormat and Date objects
+   * @param dateAndTimeString   The date and time arguments concatenated for parsing
+   * @throws ParserException    Throws an exception if the file contains an invalid date and time format string
+   */
+  private void parseDateAndTime(String dateAndTimeString) throws ParserException {
     SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm"); //capital HH means to use 24-hour format
     dateFormat.setLenient(false); //to disallow dates like 03/33/2014, etc
     Date formattedDate;
     try {
-      formattedDate = dateFormat.parse(departure);
+      formattedDate = dateFormat.parse(dateAndTimeString);
+      dateFormat.format(formattedDate);
     } catch (ParseException e) {
-      throw new ParserException("File malformatted: error parsing departure date and time");
+      throw new ParserException("File malformatted: error parsing date and time arguments");
     }
   }
 
+  /**
+   * This method validates an airport code retrieved from the file
+   * @param airportCode       The airport code string
+   * @throws ParserException  Throws an exception if airportCode is either null, empty, or is not a 3-letter string
+   */
   private void parseAirportCode(String airportCode) throws ParserException {
     if (airportCode == null || airportCode.equals("") || airportCode.length() != 3) {
       throw new ParserException("File malformatted: airport code is invalid");
     }
   }
 
+  /**
+   * This method retrieves a reference to the current airline. Note that the returned object needs to be cast as an Airline
+   * @return    The reference to the current airline Airline object
+   */
   public AbstractAirline getParsedAirline() {
     return this.airline;
   }
 
+  /**
+   * This method retrieves the current airline's name
+   * @return    The current airline's name
+   */
   public String getAirlineName () {
     return this.airlineName;
   }
 
+  /**
+   * This method retrieves the number of flights the current airline has
+   * @return    The number of flights the current airline has
+   */
   public int getNumberOfFlights () {
     return this.numberOfFlights;
+  }
+
+  /**
+   * This method checks to see if the parser object holds a File object that is empty
+   * @return    The boolean of whether the current file in reference is empty
+   */
+  public boolean fileIsEmpty() {
+    return this.fileIsEmpty;
   }
 }

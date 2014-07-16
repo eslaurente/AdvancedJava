@@ -22,7 +22,7 @@ public class Project2 {
   public static final String USAGE_DEST = "dest" + tabulate(18) + "Three-letter code of arrival airport";
   public static final String USAGE_ARRIVAL = "arrivalTime" + tabulate(11) + "Arrival date and time (24-hour time)";
   public static final String USAGE_PRINT = "-print" + tabulate(16) + "Prints a description of the new flight";
-  public static final String USAGE_TEXTFILE = "-textFile" + tabulate(13) + "Where to read/write the airline info";
+  public static final String USAGE_TEXTFILE = "-textFile file" + tabulate(8) + "Where to read/write the airline info";
   public static final String USAGE_README = "-README" + tabulate(15) + "Prints a README for this project and exits";
   public static final String OPTION_PRINT = "-print";
   public static final String OPTION_TEXTFILE = "-textFile";
@@ -40,6 +40,8 @@ public class Project2 {
     int argStartingPosition = 0; //Actual starting index offset by the number of options
     boolean airlineFileExists = true;
     List<String> options;
+    TextParser parser = null;
+    TextDumper dumper = null;
     //Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
     //System.err.print("Missing command line arguments");
     if (args.length == 0) {
@@ -69,18 +71,13 @@ public class Project2 {
         }
         if (airlineFileExists == true) {
           //if the file exists, open it and parse and extract the airline and flight info in the file
-          TextParser parser = new TextParser(file, getAirlineName(args, argStartingPosition));
+          parser = new TextParser(file, getAirlineName(args, argStartingPosition));
           anAirline = (Airline) parser.parse();
         }
         //else: Do not create the file yet. Create the new file only after new airline and the flight is created
       } catch (Exception e) {
         if (e instanceof  ParserException) {
-          if (e.getMessage().contains("file is empty")) {
-            printUsageMessageErrorAndExit(e.getMessage() + ". Please delete the file " + fileName + " and try again");
-          }
-          else {
-            printUsageMessageErrorAndExit(e.getMessage());
-          }
+          printUsageMessageErrorAndExit(e.getMessage());
         }
         else if (e instanceof IOException) {
           printUsageMessageErrorAndExit("File error: " + e.getMessage());
@@ -109,9 +106,14 @@ public class Project2 {
     arrival = getDateAndTimeArrival(args, argStartingPosition);
     //Create airline object
     if (options.contains(OPTION_TEXTFILE)) {
-      if (airlineFileExists == true) {
+      try {
+        dumper = new TextDumper(getFileName(options));
+      } catch (IOException e) {
+        printUsageMessageErrorAndExit("File error: could not access a file called " + getFileName(options) + "\n\t" + e.getMessage());
+      }
+      if (airlineFileExists == true && parser != null && !parser.fileIsEmpty()) {
         if (anAirline == null || anAirline.getFlights().size() <= 0) {
-          printUsageMessageErrorAndExit("File malformatted: flight not added because " + getFileName(options) + " does not contain a valid airline data");
+          printUsageMessageErrorAndExit("File malformatted: flight not added because " + dumper.getFileName() + " does not contain a valid airline data");
         }
         //The airline object is valid from the parsed airline info from the file. Add the current flight info to it
         anAirline.addFlight(new Flight(flightNumber, src, departure, dest, arrival));
@@ -119,7 +121,10 @@ public class Project2 {
         //The
         anAirline = new Airline(name, new Flight(flightNumber, src, departure, dest, arrival));
       }
-      writeAirlineFlightInfo(anAirline, getFileName(options));
+      if (parser != null && parser.fileIsEmpty()) {
+        System.out.println("** EMPTY FILE: THE FILE, " + dumper.getFileName() + ", IS OVERWRITTEN **");
+      }
+      writeAirlineFlightInfo(anAirline, dumper);
     }
     //Check if there is any printing to standard out that needs to be done
     if (anAirline == null) {
@@ -131,12 +136,11 @@ public class Project2 {
     System.exit(0);
   }
 
-  private static void writeAirlineFlightInfo(Airline anAirline, String fileName) {
+  private static void writeAirlineFlightInfo(Airline anAirline, TextDumper dumper) {
     try {
-      TextDumper out = new TextDumper(fileName);
-      out.dump(anAirline);
+      dumper.dump(anAirline);
     } catch (IOException e) {
-      printUsageMessageErrorAndExit(e.getMessage());
+      printUsageMessageErrorAndExit("File error: writing to " + dumper.getFileName() + " was unsuccessful\n\t" + e.getMessage());
     }
   }
 
@@ -356,7 +360,7 @@ public class Project2 {
    */
   private static String buildUsageString() {
     StringBuilder usage = new StringBuilder();
-    usage.append("\nusage: java edu.pdx.cs410J.laurente.Project1 [options] <args>\n");
+    usage.append("\nusage: java edu.pdx.cs410J.laurente.Project2 [options] <args>\n");
     usage.append("  args are (in this order):\n");
     usage.append("    ").append(USAGE_NAME).append("\n");
     usage.append("    ").append(USAGE_FLIGHTNUMBER).append("\n");
@@ -365,8 +369,8 @@ public class Project2 {
     usage.append("    ").append(USAGE_DEST).append("\n");
     usage.append("    ").append(USAGE_ARRIVAL).append("\n");
     usage.append("  options are (options may appear in any order):\n");
-    usage.append("    ").append(USAGE_PRINT).append("\n");
     usage.append("    ").append(USAGE_TEXTFILE).append("\n");
+    usage.append("    ").append(USAGE_PRINT).append("\n");
     usage.append("    ").append(USAGE_README);
     return usage.toString();
   }
@@ -418,7 +422,11 @@ public class Project2 {
       "<airport dest> <arrive date> <arrive time>\nThe date and time arguments must be in mm/dd/yyyy hh:mm format "  +
       "and the time portion is in the 24-hour format.\nSee usage details below.\n\n[EXAMPLE]\nHere is a complete command line usage example with the " +
       "printing option:\n\tjava edu.pdx.cs410J.laurente.Project1 -print \"Hawaiian Airlines\" 234 PDX 03/02/2014 04:53 HNL 03/02/2014 21:53\nThe output " +
-      "for this would be:\n\tHawaiian Airlines with 1 flight: Flight 234 departs PDX at 03/02/2014 04:53 arrives HNL at 03/02/2014 21:53\n";
+      "for this would be:\n\tHawaiian Airlines with 1 flight: Flight 234 departs PDX at 03/02/2014 04:53 arrives HNL at 03/02/2014 21:53\n" +
+      "\nFILES\nThe format for writing and reading airline data from a file is:\n" +
+      "<airline name> <number of flights> flight(s):\n    <flight1 flight number> <source> <depart date> <depart time> <dest> <arrive date> <arrive time>\n" +
+      "    <flight2 flight number> <source> <depart date> <depart time> <dest> <arrive date> <arrive time>\n    etc...<end of file>" +
+      "\nNote: if a file does not exist, it will be created and written to. If the file exists and is empty, it will be overwritten";
     System.out.println("-----------------------------------------------------------------------------------------------------------------------------");
     System.out.println(HEADER);
     System.out.println("-----------------------------------------------------------------------------------------------------------------------------");

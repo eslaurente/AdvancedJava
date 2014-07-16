@@ -89,9 +89,14 @@ public class Project2Test extends InvokeMainTestCase {
   }
 
   @Test
-  public void testTextFileOption() {
-    MainMethodResult result = invokeMain("-README", "-textFile", "testFile", "Hawaiian Airlines", "2", "PDX", "3/2/2014", "4:53", "HNL", "3/2/2014", "21:53");
-    System.out.println(result.getOut());
+  public void testTextFileOptionWithErrOutput() {
+    MainMethodResult result = invokeMain("-print", "-textFile", "testFile", "Hawaiian", "10", "PDX", "3/2/2014", "4:53", "HNL", "3/2/2014", "21:53");
+    System.out.println(result.getErr());
+  }
 
+  @Test
+  public void testTextFileOptionWithOutOutput() {
+    MainMethodResult result = invokeMain("-print", "-textFile", "testFile", "Hawaiian", "10", "PDX", "3/2/2014", "4:53", "HNL", "3/2/2014", "21:53");
+    System.out.println(result.getOut());
   }
 }
