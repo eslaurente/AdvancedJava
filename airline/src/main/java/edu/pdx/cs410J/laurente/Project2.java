@@ -13,6 +13,7 @@ import java.util.List;
 
 /**
  * The main class for the CS410J airline Project
+ * @author  Emerald Laurente
  */
 public class Project2 {
   public static final String USAGE_NAME = "name" + tabulate(18) + "The name of the airline";
