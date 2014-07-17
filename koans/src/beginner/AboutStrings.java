@@ -78,17 +78,17 @@ public class AboutStrings {
 
 	@Koan
 	public void readableStringFormattingWithMessageFormat() {
-		assertEquals(MessageFormat.format("{0} {1} {0}", "a", "b"), __);
+		assertEquals(MessageFormat.format("{0} {1} {0}", "a", "b"), "a b a");
 	}
 
 	@Koan
 	public void extraArgumentsToMessageFormatGetIgnored() {
-		assertEquals(MessageFormat.format("{0} {1} {0}", "a", "b", "c"), __);
+		assertEquals(MessageFormat.format("{0} {1} {0}", "a", "b", "c"), "a b a");
 	}
 
 	@Koan
 	public void insufficientArgumentsToMessageFormatDoesNotReplaceTheToken() {
-		assertEquals(MessageFormat.format("{0} {1} {0}", "a"), __);
+		assertEquals(MessageFormat.format("{0} {1} {0}", "a"), "a {1} a");
 	}
 
 }
