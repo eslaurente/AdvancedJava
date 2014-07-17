@@ -137,6 +137,11 @@ public class Project2 {
     System.exit(0);
   }
 
+  /**
+   * This method writes an airline's list of flights information to a file
+   * @param anAirline   The airline to be written to a file about
+   * @param dumper      The TextDumper object that writes dumps the airline's data to a file
+   */
   private static void writeAirlineFlightInfo(Airline anAirline, TextDumper dumper) {
     try {
       dumper.dump(anAirline);
@@ -145,6 +150,11 @@ public class Project2 {
     }
   }
 
+  /**
+   * This method retrieves the file name to read from and written to, extracted from the options list
+   * @param options   The list of strings containing the options prefix and their suffix from the argument array args
+   * @return          The file name provided by the user with the ".flt" file name extension.
+   */
   private static String getFileName(List<String> options) {
     String fileName;
     int prefixIndex = options.indexOf(OPTION_TEXTFILE);
