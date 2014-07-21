@@ -153,12 +153,12 @@ public class Project3 {
   /**
    * This method retrieves the file name to read from and written to, extracted from the options list
    * @param options   The list of strings containing the options prefix and their suffix from the argument array args
-   * @return          The file name provided by the user with the ".flt" file name extension.
+   * @return          The file name provided by the user
    */
   private static String getFileName(List<String> options) {
     String fileName;
     int prefixIndex = options.indexOf(OPTION_TEXTFILE);
-    fileName = prefixIndex + 1 <= options.size() - 1 ? new String(options.get(prefixIndex + 1) + ".flt") : null;
+    fileName = prefixIndex + 1 <= options.size() - 1 ? options.get(prefixIndex + 1) : null;
     if (fileName == null) {
       printUsageMessageErrorAndExit("File error: Could not retrieve file name from command line arguments");
     }
