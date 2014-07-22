@@ -2,8 +2,12 @@ package edu.pdx.cs410J.laurente;
 
 import edu.pdx.cs410J.AbstractAirline;
 import edu.pdx.cs410J.AirlineDumper;
+import edu.pdx.cs410J.ParserException;
 
 import java.io.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Iterator;
 
 /**
@@ -72,14 +76,20 @@ public class TextDumper implements AirlineDumper {
         currentFlight = iter.next();
         toWrite.append("    ").append(currentFlight.getNumber()).append(" ");
         toWrite.append(currentFlight.getSource()).append(" ");
-        toWrite.append(currentFlight.getDepartureString()).append(" ");
+        toWrite.append(convertDateTimeToShortForm(currentFlight.getDeparture())).append(" ");
         toWrite.append(currentFlight.getDestination()).append(" ");
-        toWrite.append(currentFlight.getArrivalString()).append("\n");
+        toWrite.append(convertDateTimeToShortForm(currentFlight.getArrival())).append("\n");
       }
       writer.print(toWrite.toString());
       writer.flush();
       writer.close();
     }
+  }
+
+  private String convertDateTimeToShortForm(Date date) {
+    SimpleDateFormat shortForm = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
+    shortForm.setLenient(false);
+    return shortForm.format(date);
   }
 
   /**

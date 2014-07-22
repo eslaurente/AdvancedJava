@@ -27,6 +27,7 @@ public class TextParser implements AirlineParser {
   private String expectedAirlineName; //used to check if the name provided from the command line matches the file
   private int numberOfFlights;
   private boolean fileIsEmpty;
+  private static final int MAX_NUMBER_OF_FLIGHT_ARGS = 9;
 
   //Constructors
   /**
@@ -159,14 +160,15 @@ public class TextParser implements AirlineParser {
    * @throws ParserException  Thrown if any of the helper methods throws any ParserException, and caught in the parse() method
    */
   private Flight parseAFlight(String flightInfoLine) throws ParserException {
-    String flightNumber, source, departDate, departTime, departure, dest, arrivalDate, arrivalTime, arrival;
+    String flightNumber, source, departDate, departTime, dest, arrivalDate, arrivalTime;
+    Date departure, arrival;
     List<String> flightData = new ArrayList<String>(Arrays.asList(flightInfoLine.split("\\s")));
     flightData.removeAll(Arrays.asList("", null)); //remove empty elements from flightData arrays list
-    if (flightData.size() < 7) {
-      throw new ParserException("File malformatted: a flight should have 7 arguments for data, but current flight only has " + flightData.size());
+    if (flightData.size() < MAX_NUMBER_OF_FLIGHT_ARGS) {
+      throw new ParserException("File malformatted: a flight should have " + MAX_NUMBER_OF_FLIGHT_ARGS + " arguments for data, but current flight only has " + flightData.size());
     }
-    else if (flightData.size() > 7) {
-      throw new ParserException("File malformatted: extraneous arguments found when there should only be 7");
+    else if (flightData.size() > MAX_NUMBER_OF_FLIGHT_ARGS) {
+      throw new ParserException("File malformatted: extraneous arguments found when there should only be " + MAX_NUMBER_OF_FLIGHT_ARGS);
     }
       //parse flight number
       flightNumber = parseFlightNumber(flightData.get(0));
@@ -175,19 +177,16 @@ public class TextParser implements AirlineParser {
       parseAirportCode(source);
       //parse flight departure date and time
       departDate = flightData.get(2);
-      departTime = flightData.get(3);
-      departure = departDate + " " + departTime;
-      parseDateAndTime(departure);
+      departTime = flightData.get(3) + " " + flightData.get(4);
+      departure = parseDateAndTime(departDate + " " + departTime);
       //parse flight destination airport code
-      dest = flightData.get(4);
+      dest = flightData.get(5);
       parseAirportCode(dest);
       //parse flight arrival time
-      arrivalDate = flightData.get(5);
-      arrivalTime = flightData.get(6);
-      arrival = arrivalDate + " " + arrivalTime;
-      parseDateAndTime(arrival);
-
-    return new Flight(flightNumber, source, departure, dest, arrival);
+      arrivalDate = flightData.get(6);
+      arrivalTime = flightData.get(7) + " " + flightData.get(8);
+      arrival = parseDateAndTime(arrivalDate + " " + arrivalTime);
+    return new Flight(flightNumber, source, new Date(), dest, new Date());
   }
 
   /**
@@ -211,8 +210,8 @@ public class TextParser implements AirlineParser {
    * @param dateAndTimeString   The date and time arguments concatenated for parsing
    * @throws ParserException    Throws an exception if the file contains an invalid date and time format string
    */
-  private void parseDateAndTime(String dateAndTimeString) throws ParserException {
-    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm"); //capital HH means to use 24-hour format
+  private Date parseDateAndTime(String dateAndTimeString) throws ParserException {
+    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy hh:mm a"); //capital HH means to use 24-hour format
     dateFormat.setLenient(false); //to disallow dates like 03/33/2014, etc
     Date formattedDate;
     try {
@@ -221,6 +220,7 @@ public class TextParser implements AirlineParser {
     } catch (ParseException e) {
       throw new ParserException("File malformatted: error parsing date and time arguments");
     }
+    return formattedDate;
   }
 
   /**

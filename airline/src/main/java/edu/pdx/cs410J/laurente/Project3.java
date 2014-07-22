@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -22,17 +23,20 @@ public class Project3 {
   public static final String USAGE_NAME = "name" + tabulate(18) + "The name of the airline";
   public static final String USAGE_FLIGHTNUMBER = "flightNumber" + tabulate(10) + "The flight number";
   public static final String USAGE_SRC = "src" + tabulate(19) + "Three-letter code of departure airport";
-  public static final String USAGE_DEPARTTIME = "departTime" + tabulate(12) + "Departure date and time (24-hour time)";
+  public static final String USAGE_DEPARTTIME = "departTime" + tabulate(12) + "Departure date time am/pm";
   public static final String USAGE_DEST = "dest" + tabulate(18) + "Three-letter code of arrival airport";
-  public static final String USAGE_ARRIVAL = "arrivalTime" + tabulate(11) + "Arrival date and time (24-hour time)";
-  public static final String USAGE_PRINT = "-print" + tabulate(16) + "Prints a description of the new flight";
+  public static final String USAGE_ARRIVAL = "arrivalTime" + tabulate(11) + "Arrival date time am/pm";
+  public static final String USAGE_PRETTY = "-pretty file" + tabulate(8) + "Pretty print the airline's flights to" +
+                                            tabulate(8) + "a text file or standard out (file -)";
   public static final String USAGE_TEXTFILE = "-textFile file" + tabulate(8) + "Where to read/write the airline info";
+  public static final String USAGE_PRINT = "-print" + tabulate(16) + "Prints a description of the new flight";
   public static final String USAGE_README = "-README" + tabulate(15) + "Prints a README for this project and exits";
-  public static final String OPTION_PRINT = "-print";
+  public static final String OPTION_PRETTYPRINT = "-pretty";
   public static final String OPTION_TEXTFILE = "-textFile";
+  public static final String OPTION_PRINT = "-print";
   public static final String OPTION_README = "-README";
   public static final String VERBOSE_USAGE = buildUsageString();
-  public static final int MAX_NUMBER_OF_ARGS = 8;
+  public static final int MAX_NUMBER_OF_ARGS = 10;
   public static final String ABSOLUTE_PATH = System.getProperty("user.dir");
 
   /**
@@ -41,8 +45,9 @@ public class Project3 {
    */
   public static void main(String[] args) {
     Airline anAirline = null;
-    String name, flightNumber, src, departDate, departTime, departure, dest, arrivalDate,
-           arrivalTime, arrival, fileName;
+    String name, flightNumber, src, departDate, departTime, dest, arrivalDate,
+           arrivalTime, fileName;
+    Date departureFormatted, arrivalFormatted;
     int argStartingPosition = 0; //Actual starting index offset by the number of options
     boolean airlineFileExists = true;
     List<String> options;
@@ -100,7 +105,7 @@ public class Project3 {
       printUsageMessageErrorAndExit("Insufficient number of arguments: Not enough information about the flight was given");
     }
     else if (args.length - argStartingPosition > MAX_NUMBER_OF_ARGS) {
-      printUsageMessageErrorAndExit("Extraneous argument(s) encountered: only eight (8) valid arguments is required");
+      printUsageMessageErrorAndExit("Extraneous argument(s) encountered: only " + MAX_NUMBER_OF_ARGS + " valid arguments are required");
     }
 
 
@@ -112,12 +117,13 @@ public class Project3 {
     //Get the source airport code
     src = getSourceAirportCode(args, argStartingPosition);
     //Get departure date and time
-    departure = getDateAndTimeDateDeparture(args, argStartingPosition);
+    departureFormatted = getDateAndTimeDateDeparture(args, argStartingPosition);
     //Get destination airport code
     dest = getDestAirportCode(args, argStartingPosition);
     //Get arrival date and time
-    arrival = getDateAndTimeArrival(args, argStartingPosition);
+    arrivalFormatted = getDateAndTimeArrival(args, argStartingPosition);
     //Create airline object
+    //System.err.println("Depart date/time: " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).parse(departureFormatted.toString()) + ", arrival date/time: " + arrivalFormatted);
     if (options.contains(OPTION_TEXTFILE)) {
       try {
         dumper = new TextDumper(getFileName(options));
@@ -129,15 +135,18 @@ public class Project3 {
           printUsageMessageErrorAndExit("File malformatted: flight not added because " + dumper.getFileName() + " does not contain a valid airline data");
         }
         //The airline object is valid from the parsed airline info from the file. Add the current flight info to it
-        anAirline.addFlight(new Flight(flightNumber, src, departure, dest, arrival));
+        anAirline.addFlight(new Flight(flightNumber, src, departureFormatted, dest, arrivalFormatted));
       } else {
-        //The
-        anAirline = new Airline(name, new Flight(flightNumber, src, departure, dest, arrival));
+        //A new airline object must be created
+        anAirline = new Airline(name, new Flight(flightNumber, src, departureFormatted, dest, arrivalFormatted));
       }
       if (parser != null && parser.fileIsEmpty()) {
         System.out.println("** EMPTY FILE: THE FILE, " + dumper.getFileName() + ", IS OVERWRITTEN **");
       }
       writeAirlineFlightInfo(anAirline, dumper);
+    }
+    else {
+      anAirline = new Airline(name, new Flight(flightNumber, src, departureFormatted, dest, arrivalFormatted));
     }
     //Check if there is any printing to standard out that needs to be done
     if (anAirline == null) {
@@ -191,14 +200,16 @@ public class Project3 {
    * @param argStartingPosition   The offset index used as the base index
    * @return                      The current flight's departure date and time as a String object
    */
-  private static String getDateAndTimeArrival(String[] args, int argStartingPosition) {
+  private static Date getDateAndTimeArrival(String[] args, int argStartingPosition) {
     String arrivalDate;
     String arrivalTime;
-    String arrival;
-    arrivalDate = args[argStartingPosition + 6];
-    arrivalTime = args[argStartingPosition + 7];
+    String amPm;
+    Date arrival;
+    arrivalDate = args[argStartingPosition + 7];
+    arrivalTime = args[argStartingPosition + 8];
+    amPm = args[argStartingPosition + 9];
     try {
-      arrival = formatDateTime(arrivalDate + " " + arrivalTime);
+      arrival = formatDateTime(arrivalDate + " " + arrivalTime + " " + amPm);
     } catch (ParseException e) {
       printUsageMessageErrorAndExit("Invalid argument: For the flight's arrival, " + e.getMessage());
       throw new AssertionError("Unreachable statement reached.");
@@ -214,7 +225,7 @@ public class Project3 {
    */
   private static String getDestAirportCode(String[] args, int argStartingPosition) {
     String dest;
-    dest = args[argStartingPosition + 5].toUpperCase(); //use upper-case format
+    dest = args[argStartingPosition + 6].toUpperCase(); //use upper-case format
     if (!isValidAirportCode(dest) || dest.equals("")) {
       printUsageMessageErrorAndExit("Error: the destination airport code \"" + dest + "\" is not a valid code");
     }
@@ -227,14 +238,16 @@ public class Project3 {
    * @param argStartingPosition   The offset index used as the base index
    * @return                      The current flight's departure date and time as a String object
    */
-  private static String getDateAndTimeDateDeparture(String[] args, int argStartingPosition) {
+  private static Date getDateAndTimeDateDeparture(String[] args, int argStartingPosition) {
     String departDate;
     String departTime;
-    String departure;
+    Date departure;
+    String amPm;
     departDate = args[argStartingPosition + 3];
     departTime = args[argStartingPosition + 4];
+    amPm = args[argStartingPosition + 5];
     try {
-      departure = formatDateTime(departDate + " " + departTime);
+      departure = formatDateTime(departDate + " " + departTime + " " + amPm);
     } catch (ParseException e) {
       printUsageMessageErrorAndExit("Invalid argument: For the flight's depature, " + e.getMessage());
       throw new AssertionError("Unreachable statement reached.");
@@ -428,18 +441,18 @@ public class Project3 {
    * @return                    The formatted string of the date and time argument.
    * @exception ParseException  An error is thrown if dateTimeArg is not of the form "MM/dd/yyy HH:mm"
    */
-  private static String formatDateTime(String dateTimeArg) throws ParseException {
-    StringBuilder resultingStr = new StringBuilder();
-    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm"); //capital HH means to use 24-hour format
+  private static Date formatDateTime(String dateTimeArg) throws ParseException {
+    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
     dateFormat.setLenient(false); //to disallow dates like 03/33/2014, etc
     Date formattedDate;
+
     try {
       formattedDate = dateFormat.parse(dateTimeArg);
-      resultingStr.append(dateFormat.format(formattedDate));
+      //resultingStr.append(dateFormat.format(formattedDate));
     } catch (ParseException e) {
-      throw new ParseException("date/time arguments must be in this format (24-hour time): mm/dd/yyyy hh/mm", -1);
+      throw new ParseException("date/time arguments must be in this format ('a' is am/pm marker): mm/dd/yyyy hh/mm a", -1);
     }
-    return resultingStr.toString();
+    return formattedDate;
   }
 
   /**

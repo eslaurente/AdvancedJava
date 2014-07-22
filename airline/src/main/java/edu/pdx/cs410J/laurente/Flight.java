@@ -2,6 +2,9 @@ package edu.pdx.cs410J.laurente;
 
 import edu.pdx.cs410J.AbstractFlight;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 
@@ -12,8 +15,8 @@ import java.util.Date;
 public class Flight extends AbstractFlight {
   private String source; //Must be a three-letter code string
   private String destin; //Must be a three-letter code string
-  private String departInfo;
-  private String arriveInfo;
+  private Date departInfo;
+  private Date arriveInfo;
   private int flightNum;
 
   /**
@@ -35,7 +38,7 @@ public class Flight extends AbstractFlight {
    * @param dest          The flight's destination airport code
    * @param arriveInfo    The scheduled departure date and time
    */
-  Flight (int flightNum, String source, String departInfo, String dest, String arriveInfo) {
+  Flight (int flightNum, String source, Date departInfo, String dest, Date arriveInfo) {
     this.flightNum = flightNum;
     this.source = source;
     this.destin = dest;
@@ -51,7 +54,7 @@ public class Flight extends AbstractFlight {
    * @param dest          The flight's destination airport code
    * @param arriveInfo    The scheduled departure date and time
    */
-  Flight (String flightNum, String source, String departInfo, String dest, String arriveInfo) {
+  Flight (String flightNum, String source, Date departInfo, String dest, Date arriveInfo) {
     this.flightNum = Integer.parseInt(flightNum);
     this.source = source;
     this.destin = dest;
@@ -63,7 +66,7 @@ public class Flight extends AbstractFlight {
    * This method sets the flight's dscheduled departure date and time
    * @param departure   The scheduled departure date and time
    */
-  public void setDepartInfo(String departure) {
+  public void setDepartInfo(Date departure) {
     this.departInfo = departure;
   }
 
@@ -71,7 +74,7 @@ public class Flight extends AbstractFlight {
    * This method sets the flight's scheduled arrival date and time
    * @param arrival   The scheduled arrival date and time
    */
-  public void setArriveInfo(String arrival) {
+  public void setArriveInfo(Date arrival) {
     this.arriveInfo = arrival;
   }
 
@@ -99,6 +102,14 @@ public class Flight extends AbstractFlight {
    */
   @Override
   public String getDepartureString() {
+    return parseDateTimeToString(this.departInfo);
+  }
+
+  /**
+   * Returns this flight's departure time as a <code>Date</code>.
+   */
+  @Override
+  public Date getDeparture() {
     return this.departInfo;
   }
 
@@ -117,6 +128,30 @@ public class Flight extends AbstractFlight {
    */
   @Override
   public String getArrivalString() {
+    return parseDateTimeToString(this.arriveInfo);
+  }
+
+  /**
+   * Returns this flight's arrival time as a <code>Date</code>.
+   */
+  @Override
+  public Date getArrival() {
     return this.arriveInfo;
   }
+
+  private String parseDateTimeToString(Date date) {
+    String arrivalString;
+    SimpleDateFormat shortForm = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
+    shortForm.setLenient(false);
+    try {
+      arrivalString = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).parse(shortForm.format(date)).toString();
+    } catch (ParseException e) {
+      System.err.println("Error converting date/time to string: " + e.getMessage());
+      System.exit(1);
+      return null;
+    }
+    return arrivalString;
+  }
+
+
 }

@@ -107,4 +107,11 @@ public class Project3Test extends InvokeMainTestCase {
     assertTrue(result.getErr().contains("Extraneous argument(s) encountered: only eight (8) valid arguments is required"));
 
   }
+
+  @Test
+  public void testDateTimeWithAmPm() {
+    MainMethodResult result = invokeMain("-print", "-textFile", "laurente/test.txt", "Hawaiian", "10", "PDX", "3/2/2014", "4:53", "pm", "HNL", "3/2/2014", "1:00", "am");
+    System.out.println(result.getErr());
+    assertTrue(result.getOut().contains("Hawaiian with 1 flight: Flight 10 departs PDX at Sun Mar 02 16:53:00 PST 2014 arrives HNL at Sun Mar 02 09:53:00 PST 2014"));
+  }
 }
