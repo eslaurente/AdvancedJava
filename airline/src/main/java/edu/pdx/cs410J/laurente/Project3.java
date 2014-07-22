@@ -3,7 +3,10 @@ package edu.pdx.cs410J.laurente;
 import edu.pdx.cs410J.ParserException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,6 +32,8 @@ public class Project3 {
   public static final String OPTION_TEXTFILE = "-textFile";
   public static final String OPTION_README = "-README";
   public static final String VERBOSE_USAGE = buildUsageString();
+  public static final int MAX_NUMBER_OF_ARGS = 8;
+  public static final String ABSOLUTE_PATH = System.getProperty("user.dir");
 
   /**
    *  The main method
@@ -41,6 +46,7 @@ public class Project3 {
     int argStartingPosition = 0; //Actual starting index offset by the number of options
     boolean airlineFileExists = true;
     List<String> options;
+    File file = null;
     TextParser parser = null;
     TextDumper dumper = null;
     //Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
@@ -63,11 +69,14 @@ public class Project3 {
       //Open the file pointed to by fileName or create the new file if it does not exist
       fileName = getFileName(options);
       try {
-        File file = new File(fileName);
+        file = new File(fileName);
+        //System.out.println("Absoltue path: " + ABSOLUTE_PATH);
         if (!file.exists()) {
+          //System.err.println("FILE DOES NOT EXIST");
           if(file.createNewFile() == false) {
             printUsageMessageErrorAndExit("File error: encountered a problem when creating a the file " + fileName);
           }
+
           airlineFileExists = false;
         }
         if (airlineFileExists == true) {
@@ -81,16 +90,19 @@ public class Project3 {
           printUsageMessageErrorAndExit(e.getMessage());
         }
         else if (e instanceof IOException) {
+          System.err.println("file name: " + file.getAbsolutePath());
           printUsageMessageErrorAndExit("File error: " + e.getMessage());
         }
       }
     }
-    else if (args.length - argStartingPosition < 8) {
+    //Check for insufficient or extraneous arguments from list of arguments
+    if (args.length - argStartingPosition < MAX_NUMBER_OF_ARGS) {
       printUsageMessageErrorAndExit("Insufficient number of arguments: Not enough information about the flight was given");
     }
-    else if (args.length - argStartingPosition > 8) {
+    else if (args.length - argStartingPosition > MAX_NUMBER_OF_ARGS) {
       printUsageMessageErrorAndExit("Extraneous argument(s) encountered: only eight (8) valid arguments is required");
     }
+
 
     //--Begin parsing the rest of the arguments --
     //Get name
@@ -156,13 +168,21 @@ public class Project3 {
    * @return          The file name provided by the user
    */
   private static String getFileName(List<String> options) {
-    String fileName;
+    String fileFromArgs;
+    StringBuilder absoluteFilePath = null;
     int prefixIndex = options.indexOf(OPTION_TEXTFILE);
-    fileName = prefixIndex + 1 <= options.size() - 1 ? options.get(prefixIndex + 1) : null;
-    if (fileName == null) {
+    fileFromArgs = prefixIndex + 1 <= options.size() - 1 ? options.get(prefixIndex + 1) : null;
+    if (fileFromArgs == null) {
       printUsageMessageErrorAndExit("File error: Could not retrieve file name from command line arguments");
     }
-    return fileName;
+    else if (fileFromArgs.contains("/")){ //ignore parent folders
+      String[] pathList = fileFromArgs.split("/");
+      int fileNameIndex = pathList.length - 1;
+      fileFromArgs = pathList[fileNameIndex];
+      //System.err.println("Path object: " + Paths.get(fileFromArgs).toString());
+      absoluteFilePath = new StringBuilder(ABSOLUTE_PATH).append("/").append(fileFromArgs);
+    }
+    return absoluteFilePath == null ? fileFromArgs : absoluteFilePath.toString();
   }
 
   /**
