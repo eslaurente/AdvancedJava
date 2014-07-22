@@ -74,6 +74,7 @@ public class Project3Test extends InvokeMainTestCase {
     assertTrue(result.getErr().contains("Error: the destination airport code \"HNLZ\" is not a valid code"));
   }
 
+  @Ignore
   @Test
   public void testPrintOptionWithValidArgs() {
     MainMethodResult result = invokeMain("-print", "Hawaiian Airlines", "234", "PDX", "3/2/2014", "4:53", "HNL", "3/2/2014", "21:53");
@@ -98,5 +99,12 @@ public class Project3Test extends InvokeMainTestCase {
   public void testTextFileOptionWithOutOutput() {
     MainMethodResult result = invokeMain("-print", "-textFile", "testFile", "Hawaiian", "10", "PDX", "3/2/2014", "4:53", "HNL", "3/2/2014", "21:53");
     System.out.println(result.getOut());
+  }
+
+  @Test
+  public void extraneousArgs() {
+    MainMethodResult result = invokeMain("-print", "-textFile", "laurente/laurente-x.txt", "Test6", "123", "PDX", "03/03/2014", "12:00", "ORD", "01/04/2014", "16:00", "fred");
+    assertTrue(result.getErr().contains("Extraneous argument(s) encountered: only eight (8) valid arguments is required"));
+
   }
 }
