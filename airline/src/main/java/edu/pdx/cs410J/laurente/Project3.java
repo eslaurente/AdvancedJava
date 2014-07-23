@@ -101,8 +101,7 @@ public class Project3 {
         }
       }
       if (options.contains(OPTION_PRETTYPRINT)) { //parse file name
-        String tempFileName = getFileName(options, OPTION_PRETTYPRINT);
-        prettyPrintFileName = tempFileName.equals("-") ? null : tempFileName; //null if "-" is suffix argument
+        prettyPrintFileName = getPrettyPrintFileName(options);
       }
     }
     //Check for insufficient or extraneous arguments from list of arguments
@@ -162,6 +161,20 @@ public class Project3 {
       prettyPrinter(prettyDumper, prettyPrintFileName, anAirline);
     }
     System.exit(0);
+  }
+
+
+  /**
+   * This method retrieves the pretty file name from the options arguments list
+   * @param options   The list of strings containing the options prefix and their suffix from the argument array args
+   * @return          The file name to be pretty-printed to, or null if the destination is standard out
+   */
+  private static String getPrettyPrintFileName(List<String> options) {
+    String temp = getFileName(options, OPTION_PRETTYPRINT);
+    if (temp == null || (temp.startsWith("-")) && !temp.equals("-")) {
+      printUsageMessageErrorAndExit("Invalid argument: \"" + temp + "\" is not a valid -pretty argument");
+    }
+    return temp.equals("-") ? null : temp; //null if "-" is suffix arguments
   }
 
   /**

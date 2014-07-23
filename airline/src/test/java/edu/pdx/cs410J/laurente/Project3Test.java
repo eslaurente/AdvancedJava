@@ -110,21 +110,21 @@ public class Project3Test extends InvokeMainTestCase {
 
   @Test
   public void testDateTimeWithAmPm() {
-    MainMethodResult result = invokeMain("-print", "-textFile", "laurente/test.txt", "-pretty", "pretty.txt", "Hawaiian", "14", "HNL", "3/2/2014", "4:53", "pm", "HNL", "3/3/2014", "1:00", "am");
+    MainMethodResult result = invokeMain("-pretty", "-", "Hawaiian", "14", "HNL", "3/2/2014", "8:53", "pm", "HNL", "3/3/2014", "1:00", "am");
     System.out.println(result.getOut());
     //assertTrue(result.getOut().contains("Hawaiian with 1 flight: Flight 10 departs PDX at Sun Mar 02 16:53:00 PST 2014 arrives HNL at Sun Mar 02 09:53:00 PST 2014"));
   }
 
   @Test
   public void testInvalidAiportCode() {
-    MainMethodResult result = invokeMain("-print", "Hawaiian", "10", "PDL", "3/2/2014", "4:53", "pm", "HNL", "3/3/2014", "1:00", "am");
+    MainMethodResult result = invokeMain("-print", "Hawaiian", "10", "PDX", "3/2/2014", "4:53", "pm", "HND", "3/3/2014", "1:00", "am");
     System.out.println(result.getErr());
     assertTrue(result.getErr().contains("Invalid argument: the airport \"PDL\" does not exist"));
   }
 
   @Test
   public void testPrettyFileArgs() {
-    MainMethodResult result = invokeMain("-README", "-textFile", "test1.txt", "-pretty", "pretty.txt", "Hawaiian", "10", "PDX", "3/2/2014", "4:53", "pm", "HNL", "3/3/2014", "4:53", "pm");
+    MainMethodResult result = invokeMain("-textFile", "test.txt", "-pretty", "-", "Hawaiian", "34", "PDX", "3/2/2014", "6:53", "pm", "HNL", "3/3/2014", "4:53", "pm");
     System.out.println(result.getOut());
     //assertTrue(result.getOut().contains("Hawaiian with 1 flight: Flight 10 departs PDX at Sun Mar 02 16:53:00 PST 2014 arrives HNL at Sun Mar 02 09:53:00 PST 2014"));
   }

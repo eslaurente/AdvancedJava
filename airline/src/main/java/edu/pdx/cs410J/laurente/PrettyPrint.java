@@ -16,12 +16,14 @@ import java.util.Iterator;
  * This class implements an AirlineDumper, from which the dump() method writes a file containing data about an airline
  * and a list of its flights. The the data file format is:
  * This is an example of the format of the 'pretty' files:
+ *
  * Airline: Hawaiian
  * Number of flights: 1
- * ---------------------------------------------------------------------------------------------------------------
- * FLIGHT N0.     SOURCE            DEPARTURE            DESTINATION       ARRIVAL              DURATION (HOURS)
- * ---------------------------------------------------------------------------------------------------------------
- * 10             Portland, OR      03/02/2014 04:53 PM  Honolulu, HI      03/03/2014 04:53 PM  24
+ * ---------------------------------------------------------------------------------------------------------------------------
+ * FLIGHT N0.     SOURCE                  DEPARTURE             DESTINATION             ARRIVAL               DURATION (HOURS)
+ * ---------------------------------------------------------------------------------------------------------------------------
+ * 14             HNL (Honolulu, HI)      03/02/2014 04:53 PM   HNL (Honolulu, HI)      03/03/2014 01:00 AM   8
+ *
  * Note: The writer does not append an valid already-existing file, but rather overwrites the entire file.
  */
 public class PrettyPrint implements AirlineDumper {
@@ -72,10 +74,10 @@ public class PrettyPrint implements AirlineDumper {
     StringBuilder toWrite = new StringBuilder();
     toWrite.append("Airline: ").append(this.airlineName).append("\n");
     toWrite.append("Number of flights: ").append(airline.getFlights().size()).append("\n");
-    toWrite.append("------------------------------------------------------------------------------------------------------------------------------------\n");
+    toWrite.append("---------------------------------------------------------------------------------------------------------------------------\n");
     toWrite.append("FLIGHT N0.").append(tabulate(5)).append("SOURCE").append(tabulate(18)).append("DEPARTURE").
-      append(tabulate(18)).append("DESTINATION").append(tabulate(13)).append("ARRIVAL").append(tabulate(20)).append("DURATION (HOURS)\n");
-    toWrite.append("------------------------------------------------------------------------------------------------------------------------------------\n");
+      append(tabulate(13)).append("DESTINATION").append(tabulate(13)).append("ARRIVAL").append(tabulate(15)).append("DURATION (HOURS)\n");
+    toWrite.append("---------------------------------------------------------------------------------------------------------------------------\n");
     if (numOfFlights > 0) {
       Flight currentFlight;
       Iterator<Flight> iter = airline.getFlights().iterator();
@@ -85,13 +87,13 @@ public class PrettyPrint implements AirlineDumper {
       while (iter.hasNext()) {
         currentFlight = iter.next();
         flightNumber = currentFlight.getNumber();
-        srcAirport = AirportNames.getName(currentFlight.getSource());
-        destAirport = AirportNames.getName(currentFlight.getDestination());
+        srcAirport = currentFlight.getSource() + " (" + AirportNames.getName(currentFlight.getSource()) + ")";
+        destAirport = currentFlight.getDestination() + " (" + AirportNames.getName(currentFlight.getDestination()) + ")";
         departure = convertDateTimeToShortForm(currentFlight.getDeparture());
         arrival = convertDateTimeToShortForm(currentFlight.getArrival());
         toWrite.append(flightNumber).append(tabulate(13)).append(srcAirport).append(tabulate(24-srcAirport.length())).append(departure).
-          append(tabulate(27-departure.length())).append(destAirport).append(tabulate(24-destAirport.length())).append(arrival).
-          append(tabulate(27-departure.length())).append(getFlightDuration(currentFlight.getDeparture(), currentFlight.getArrival())).append("\n");
+          append(tabulate(22-departure.length())).append(destAirport).append(tabulate(24-destAirport.length())).append(arrival).
+          append(tabulate(22-departure.length())).append(getFlightDuration(currentFlight.getDeparture(), currentFlight.getArrival())).append("\n");
       }
       writer.print(toWrite.toString());
       writer.flush();
