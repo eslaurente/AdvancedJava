@@ -1,5 +1,6 @@
 package edu.pdx.cs410J.laurente;
 
+import edu.pdx.cs410J.AirportNames;
 import edu.pdx.cs410J.ParserException;
 
 import java.io.File;
@@ -10,10 +11,7 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * The main class for the CS410J airline Project
@@ -26,8 +24,8 @@ public class Project3 {
   public static final String USAGE_DEPARTTIME = "departTime" + tabulate(12) + "Departure date time am/pm";
   public static final String USAGE_DEST = "dest" + tabulate(18) + "Three-letter code of arrival airport";
   public static final String USAGE_ARRIVAL = "arrivalTime" + tabulate(11) + "Arrival date time am/pm";
-  public static final String USAGE_PRETTY = "-pretty file" + tabulate(8) + "Pretty print the airline's flights to" +
-                                            tabulate(8) + "a text file or standard out (file -)";
+  public static final String USAGE_PRETTY = "-pretty file" + tabulate(10) + "Pretty print the airline's flights to\n" +
+                                            tabulate(26) + "a text file or standard out (file -)";
   public static final String USAGE_TEXTFILE = "-textFile file" + tabulate(8) + "Where to read/write the airline info";
   public static final String USAGE_PRINT = "-print" + tabulate(16) + "Prints a description of the new flight";
   public static final String USAGE_README = "-README" + tabulate(15) + "Prints a README for this project and exits";
@@ -54,6 +52,7 @@ public class Project3 {
     File file = null;
     TextParser parser = null;
     TextDumper dumper = null;
+
     //Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
     //System.err.print("Missing command line arguments");
     if (args.length == 0) {
@@ -227,7 +226,10 @@ public class Project3 {
     String dest;
     dest = args[argStartingPosition + 6].toUpperCase(); //use upper-case format
     if (!isValidAirportCode(dest) || dest.equals("")) {
-      printUsageMessageErrorAndExit("Error: the destination airport code \"" + dest + "\" is not a valid code");
+      printUsageMessageErrorAndExit("Invalid argument: the destination airport code \"" + dest + "\" is not a valid code");
+    }
+    else if (AirportNames.getName(dest) == null) {
+      printUsageMessageErrorAndExit("Invalid argument: the airport \"" + dest + "\" does not exist");
     }
     return dest;
   }
@@ -265,7 +267,10 @@ public class Project3 {
     String src;
     src = args[argStartingPosition + 2].toUpperCase(); //use upper-case format
     if (!isValidAirportCode(src) || src.equals("")) {
-      printUsageMessageErrorAndExit("Error: the source airport code \"" + src + "\" is not a valid code");
+      printUsageMessageErrorAndExit("Invalid argument: the source airport code \"" + src + "\" is not a valid code");
+    }
+    else if (AirportNames.getName(src) == null) {
+      printUsageMessageErrorAndExit("Invalid argument: the airport \"" + src + "\" does not exist");
     }
     return src;
   }
@@ -404,7 +409,7 @@ public class Project3 {
    */
   private static String buildUsageString() {
     StringBuilder usage = new StringBuilder();
-    usage.append("\nusage: java edu.pdx.cs410J.laurente.Project2 [options] <args>\n");
+    usage.append("\nusage: java edu.pdx.cs410J.laurente.Project3 [options] <args>\n");
     usage.append("  args are (in this order):\n");
     usage.append("    ").append(USAGE_NAME).append("\n");
     usage.append("    ").append(USAGE_FLIGHTNUMBER).append("\n");
@@ -413,6 +418,7 @@ public class Project3 {
     usage.append("    ").append(USAGE_DEST).append("\n");
     usage.append("    ").append(USAGE_ARRIVAL).append("\n");
     usage.append("  options are (options may appear in any order):\n");
+    usage.append("    ").append(USAGE_PRETTY).append("\n");
     usage.append("    ").append(USAGE_TEXTFILE).append("\n");
     usage.append("    ").append(USAGE_PRINT).append("\n");
     usage.append("    ").append(USAGE_README);

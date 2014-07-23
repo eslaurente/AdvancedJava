@@ -2,6 +2,7 @@ package edu.pdx.cs410J.laurente;
 
 import edu.pdx.cs410J.AbstractAirline;
 import edu.pdx.cs410J.AirlineParser;
+import edu.pdx.cs410J.AirportNames;
 import edu.pdx.cs410J.ParserException;
 
 import java.text.ParseException;
@@ -230,7 +231,10 @@ public class TextParser implements AirlineParser {
    */
   private void parseAirportCode(String airportCode) throws ParserException {
     if (airportCode == null || airportCode.equals("") || airportCode.length() != 3) {
-      throw new ParserException("File malformatted: airport code is invalid");
+      throw new ParserException("File malformatted: airport code \"" + airportCode + "\" is invalid");
+    }
+    else if (AirportNames.getName(airportCode) == null) {
+      throw new ParserException("File malformatted: airport code \"" + airportCode + "\" invalid since it doesn't exist");
     }
   }
 
