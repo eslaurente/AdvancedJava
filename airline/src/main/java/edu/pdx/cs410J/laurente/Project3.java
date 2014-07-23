@@ -112,8 +112,6 @@ public class Project3 {
     else if (args.length - argStartingPosition > MAX_NUMBER_OF_ARGS) {
       printUsageMessageErrorAndExit("Extraneous argument(s) encountered: only " + MAX_NUMBER_OF_ARGS + " valid arguments are required");
     }
-
-
     //--Begin parsing the rest of the arguments --
     //Get name
     name = getAirlineName(args, argStartingPosition);

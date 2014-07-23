@@ -12,7 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 
-/**
+/**airline.getName()
  * This class implements an AirlineDumper, from which the dump() method writes a file containing data about an airline
  * and a list of its flights. The the data file format is:
  * This is an example of the format of the 'pretty' files:
@@ -70,7 +70,7 @@ public class PrettyPrint implements AirlineDumper {
     int numOfFlights = airline.getFlights().size();
     int counter = 1;
     StringBuilder toWrite = new StringBuilder();
-    toWrite.append("Airline: ").append(airline.getName()).append("\n");
+    toWrite.append("Airline: ").append(this.airlineName).append("\n");
     toWrite.append("Number of flights: ").append(airline.getFlights().size()).append("\n");
     toWrite.append("------------------------------------------------------------------------------------------------------------------------------------\n");
     toWrite.append("FLIGHT N0.").append(tabulate(5)).append("SOURCE").append(tabulate(18)).append("DEPARTURE").
