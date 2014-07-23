@@ -373,15 +373,12 @@ public class Project3 {
         output.append(anAirline.toString()).append(":\n");
         for (int i = 0; i < size; ++i) {
           Flight flight = (Flight)listFlights.get(i);
-          output.append("\t").append(flight.toString());
-          if (i < size - 1) {
-            output.append("\n");
-          }
+          output.append("\t").append(flight.toString()).append("\n");
         }
         System.out.print(output);
       }
     } else {
-      printUsageMessageErrorAndExit("Error: cannot print the flight information of a nonexistent airline");
+      printUsageMessageErrorAndExit("Error: cannot print information about an empty airline");
     }
   }
 

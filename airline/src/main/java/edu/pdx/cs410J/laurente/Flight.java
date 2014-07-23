@@ -145,7 +145,8 @@ public class Flight extends AbstractFlight implements Comparable {
    * @return        The string representation of the formatted date
    */
   private String parseDateTimeToString(Date date) {
-    String arrivalString;
+    //String arrivalString;
+    /*
     SimpleDateFormat shortForm = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
     shortForm.setLenient(false);
     try {
@@ -155,7 +156,8 @@ public class Flight extends AbstractFlight implements Comparable {
       System.exit(1);
       return null;
     }
-    return arrivalString;
+    */
+    return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(date);
   }
 
 
@@ -210,5 +212,23 @@ public class Flight extends AbstractFlight implements Comparable {
     else {
       return -Integer.MIN_VALUE; //invalid case
     }
+  }
+
+  /**
+   * This method checks for deep-equality of this flight with another flight object
+   * @param o     The flight object to be compared
+   * @return      Boolean value: true if this flight and flight 'o' are equal; false otherwise
+   */
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Flight flight = (Flight) o;
+    if (flightNum != flight.flightNum) return false;
+    if (!arriveInfo.equals(flight.arriveInfo)) return false;
+    if (!departInfo.equals(flight.departInfo)) return false;
+    if (!destin.equals(flight.destin)) return false;
+    if (!source.equals(flight.source)) return false;
+    return true;
   }
 }

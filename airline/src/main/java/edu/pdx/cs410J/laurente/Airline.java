@@ -59,13 +59,17 @@ public class Airline extends AbstractAirline {
 
   /**
    * This method adds a flight to the current airline's collection of flights and uses Collections.sort() method to
-   * sort the list of Flight utilizing the Flight class overridden compareTo() method in the sorting.
+   * sort the list of Flight utilizing the Flight class overridden compareTo() method in the sorting. Duplicate flights
+   * are not added to the list.
    * @param abstractFlight    The flight to be added to the collection of flights
    */
   @Override
   public void addFlight(AbstractFlight abstractFlight) {
-    this.flights.add(((Flight) abstractFlight));
-    Collections.sort(((ArrayList) this.flights));
+    Flight newFlight = ((Flight) abstractFlight);
+    if (!this.flights.contains(newFlight)) {
+      this.flights.add(newFlight);
+      Collections.sort(((ArrayList) this.flights));
+    } //else: abstractFlight already exists in the flights list and must not be duplicated
   }
 
   /**
