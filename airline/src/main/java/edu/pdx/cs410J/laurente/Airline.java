@@ -5,6 +5,7 @@ import edu.pdx.cs410J.AbstractFlight;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 
 /**
@@ -62,9 +63,8 @@ public class Airline extends AbstractAirline {
    */
   @Override
   public void addFlight(AbstractFlight abstractFlight) {
-    if (abstractFlight instanceof Flight) {
-        flights.add((Flight) abstractFlight);
-    }
+    this.flights.add(((Flight) abstractFlight));
+    Collections.sort(((ArrayList) this.flights));
   }
 
   /**

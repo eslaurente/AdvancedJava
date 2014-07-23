@@ -442,7 +442,7 @@ public class Project3 {
    * @exception ParseException  An error is thrown if dateTimeArg is not of the form "MM/dd/yyy HH:mm"
    */
   private static Date formatDateTime(String dateTimeArg) throws ParseException {
-    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
+    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy h:mm a");
     dateFormat.setLenient(false); //to disallow dates like 03/33/2014, etc
     Date formattedDate;
 

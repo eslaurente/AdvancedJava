@@ -186,7 +186,7 @@ public class TextParser implements AirlineParser {
       arrivalDate = flightData.get(6);
       arrivalTime = flightData.get(7) + " " + flightData.get(8);
       arrival = parseDateAndTime(arrivalDate + " " + arrivalTime);
-    return new Flight(flightNumber, source, new Date(), dest, new Date());
+    return new Flight(flightNumber, source, departure, dest, arrival);
   }
 
   /**
@@ -211,12 +211,12 @@ public class TextParser implements AirlineParser {
    * @throws ParserException    Throws an exception if the file contains an invalid date and time format string
    */
   private Date parseDateAndTime(String dateAndTimeString) throws ParserException {
-    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy hh:mm a"); //capital HH means to use 24-hour format
+    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy h:mm a"); //capital HH means to use 24-hour format
     dateFormat.setLenient(false); //to disallow dates like 03/33/2014, etc
     Date formattedDate;
     try {
       formattedDate = dateFormat.parse(dateAndTimeString);
-      dateFormat.format(formattedDate);
+      //dateFormat.format(formattedDate);
     } catch (ParseException e) {
       throw new ParserException("File malformatted: error parsing date and time arguments");
     }
