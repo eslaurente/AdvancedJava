@@ -139,6 +139,11 @@ public class Flight extends AbstractFlight implements Comparable {
     return this.arriveInfo;
   }
 
+  /**
+   * This method converts a Date object into a string representation in "mm/dd/yyyy hh:mm am|pm" format
+   * @param date    The Date object to be parsed
+   * @return        The string representation of the formatted date
+   */
   private String parseDateTimeToString(Date date) {
     String arrivalString;
     SimpleDateFormat shortForm = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
@@ -203,7 +208,7 @@ public class Flight extends AbstractFlight implements Comparable {
       return result;
     }
     else {
-      return -Integer.MIN_VALUE;
+      return -Integer.MIN_VALUE; //invalid case
     }
   }
 }

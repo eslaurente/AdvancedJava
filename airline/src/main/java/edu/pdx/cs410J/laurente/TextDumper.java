@@ -86,6 +86,11 @@ public class TextDumper implements AirlineDumper {
     }
   }
 
+  /**
+   * This method converts a date into the the format mm/dd/yyyy hh:mm am|pm string format
+   * @param date    The Date object to be formatted
+   * @return        The String representation of the formatted date
+   */
   private String convertDateTimeToShortForm(Date date) {
     SimpleDateFormat shortForm = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
     shortForm.setLenient(false);

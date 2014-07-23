@@ -58,7 +58,8 @@ public class Airline extends AbstractAirline {
   }
 
   /**
-   * This method adds a flight to the current airline's collection of flights
+   * This method adds a flight to the current airline's collection of flights and uses Collections.sort() method to
+   * sort the list of Flight utilizing the Flight class overridden compareTo() method in the sorting.
    * @param abstractFlight    The flight to be added to the collection of flights
    */
   @Override

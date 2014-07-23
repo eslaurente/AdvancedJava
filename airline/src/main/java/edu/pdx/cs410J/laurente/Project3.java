@@ -6,6 +6,7 @@ import edu.pdx.cs410J.ParserException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -45,13 +46,15 @@ public class Project3 {
     Airline anAirline = null;
     String name, flightNumber, src, departDate, departTime, dest, arrivalDate,
            arrivalTime, fileName;
+    String prettyPrintFileName = "";
     Date departureFormatted, arrivalFormatted;
     int argStartingPosition = 0; //Actual starting index offset by the number of options
     boolean airlineFileExists = true;
     List<String> options;
-    File file = null;
+    File file = null, prettyPrintFile = null;
     TextParser parser = null;
     TextDumper dumper = null;
+    PrettyPrint prettyDumper = null;
 
     //Class c = AbstractAirline.class;  // Refer to one of Dave's classes so that we can be sure it is on the classpath
     //System.err.print("Missing command line arguments");
@@ -69,34 +72,37 @@ public class Project3 {
     if (options.contains(OPTION_README)) { //since -README has high precedence, display it ignore parsing
       printReadme();
       System.exit(0); //terminate immediately
-    } else if (options.contains(OPTION_TEXTFILE)) {
-      //Open the file pointed to by fileName or create the new file if it does not exist
-      fileName = getFileName(options);
-      try {
-        file = new File(fileName);
-        //System.out.println("Absoltue path: " + ABSOLUTE_PATH);
-        if (!file.exists()) {
-          //System.err.println("FILE DOES NOT EXIST");
-          if(file.createNewFile() == false) {
-            printUsageMessageErrorAndExit("File error: encountered a problem when creating a the file " + fileName);
+    } else {
+      if (options.contains(OPTION_TEXTFILE)) {
+        //Open the file pointed to by fileName or create the new file if it does not exist
+        fileName = getFileName(options, OPTION_TEXTFILE);
+        try {
+          file = new File(fileName);
+          //System.out.println("Absoltue path: " + ABSOLUTE_PATH);
+          if (!file.exists()) {
+            //System.err.println("FILE DOES NOT EXIST");
+            if (file.createNewFile() == false) {
+              printUsageMessageErrorAndExit("File error: encountered a problem when creating a the file " + fileName);
+            }
+            airlineFileExists = false;
           }
-
-          airlineFileExists = false;
+          if (airlineFileExists == true) {
+            //if the file exists, open it and parse and extract the airline and flight info in the file
+            parser = new TextParser(file, getAirlineName(args, argStartingPosition));
+            anAirline = (Airline) parser.parse();
+          }
+          //else: Do not create the file yet. Create the new file only after new airline and the flight is created
+        } catch (Exception e) {
+          if (e instanceof ParserException) {
+            printUsageMessageErrorAndExit(e.getMessage());
+          } else if (e instanceof IOException) {
+            printUsageMessageErrorAndExit("File error: " + e.getMessage());
+          }
         }
-        if (airlineFileExists == true) {
-          //if the file exists, open it and parse and extract the airline and flight info in the file
-          parser = new TextParser(file, getAirlineName(args, argStartingPosition));
-          anAirline = (Airline) parser.parse();
-        }
-        //else: Do not create the file yet. Create the new file only after new airline and the flight is created
-      } catch (Exception e) {
-        if (e instanceof  ParserException) {
-          printUsageMessageErrorAndExit(e.getMessage());
-        }
-        else if (e instanceof IOException) {
-          System.err.println("file name: " + file.getAbsolutePath());
-          printUsageMessageErrorAndExit("File error: " + e.getMessage());
-        }
+      }
+      if (options.contains(OPTION_PRETTYPRINT)) { //parse file name
+        String tempFileName = getFileName(options, OPTION_PRETTYPRINT);
+        prettyPrintFileName = tempFileName.equals("-") ? null : tempFileName; //null if "-" is suffix argument
       }
     }
     //Check for insufficient or extraneous arguments from list of arguments
@@ -125,9 +131,9 @@ public class Project3 {
     //System.err.println("Depart date/time: " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).parse(departureFormatted.toString()) + ", arrival date/time: " + arrivalFormatted);
     if (options.contains(OPTION_TEXTFILE)) {
       try {
-        dumper = new TextDumper(getFileName(options));
+        dumper = new TextDumper(getFileName(options, OPTION_TEXTFILE));
       } catch (IOException e) {
-        printUsageMessageErrorAndExit("File error: could not access a file called " + getFileName(options) + "\n\t" + e.getMessage());
+        printUsageMessageErrorAndExit("File error: could not access a file called " + getFileName(options, OPTION_TEXTFILE) + "\n\t" + e.getMessage());
       }
       if (airlineFileExists == true && parser != null && !parser.fileIsEmpty()) {
         if (anAirline == null || anAirline.getFlights().size() <= 0) {
@@ -154,7 +160,50 @@ public class Project3 {
     if (options.contains(OPTION_PRINT)) { //Print airline info to standard out if there is -print
       printAirlineFlightInfo(anAirline);
     }
+    if (options.contains(OPTION_PRETTYPRINT)) { //Pretty print to file or standard out
+      prettyPrinter(prettyDumper, prettyPrintFileName, anAirline);
+    }
     System.exit(0);
+  }
+
+  /**
+   * This method writes an airline's flight data to a file or standard out in 'pretty' format using the PrettyPrint class
+   * @param prettyDumper          The PrettyPrint class object used to dump data to a file or standard out
+   * @param prettyPrintFileName   The file name that refers to the output file. If null, then output is standard out
+   * @param airline               The airline object to be written about
+   */
+  private static void prettyPrinter(PrettyPrint prettyDumper, String prettyPrintFileName, Airline airline) {
+    if (prettyPrintFileName != null) { //if -pretty argument is followed by a file name
+      File file = null;
+      try {
+        file = new File(prettyPrintFileName);
+        if (!file.exists()) {
+          if (file.createNewFile() == false) {
+            printUsageMessageErrorAndExit("File error: encountered a problem when creating a the file " + prettyPrintFileName);
+          }
+        }
+        prettyDumper = new PrettyPrint(file); //print to a that file
+      } catch (Exception e) {
+        if (e instanceof ParserException) {
+          printUsageMessageErrorAndExit(e.getMessage());
+        } else if (e instanceof IOException) {
+          printUsageMessageErrorAndExit("File error: " + e.getMessage());
+        }
+      }
+      try {
+        prettyDumper.dump(airline);
+      } catch (IOException e) {
+        printUsageMessageErrorAndExit("File error: writing to " + prettyDumper.getFileName() + " was unsuccessful\n\t" + e.getMessage());
+      }
+    }
+    else { //else -pretty argument is followed by a '-'
+      prettyDumper = new PrettyPrint(new PrintWriter(System.out));
+      try {
+        prettyDumper.dump(airline); //print to standard out
+      } catch (IOException e) {
+        printUsageMessageErrorAndExit("File error: writing to " + prettyDumper.getFileName() + " was unsuccessful\n\t" + e.getMessage());
+      }
+    }
   }
 
   /**
@@ -175,10 +224,10 @@ public class Project3 {
    * @param options   The list of strings containing the options prefix and their suffix from the argument array args
    * @return          The file name provided by the user
    */
-  private static String getFileName(List<String> options) {
+  private static String getFileName(List<String> options, String optionType) {
     String fileFromArgs;
     StringBuilder absoluteFilePath = null;
-    int prefixIndex = options.indexOf(OPTION_TEXTFILE);
+    int prefixIndex = options.indexOf(optionType);
     fileFromArgs = prefixIndex + 1 <= options.size() - 1 ? options.get(prefixIndex + 1) : null;
     if (fileFromArgs == null) {
       printUsageMessageErrorAndExit("File error: Could not retrieve file name from command line arguments");
@@ -355,20 +404,21 @@ public class Project3 {
         options.add(currentArg);
         getSuffix = false;
       }
-      else if (currentArg.equals(OPTION_PRINT) || currentArg.equals(OPTION_README) || currentArg.equals(OPTION_TEXTFILE)) {
+      else if (currentArg.equals(OPTION_PRINT) || currentArg.equals(OPTION_README) ||
+               currentArg.equals(OPTION_TEXTFILE) || currentArg.equals(OPTION_PRETTYPRINT)) {
         if (nonOptionArgCount > 0) {
           throw new ParseException("Invalid argument: \"" + currentArg + "\" optional argument must precede required arguments", -1);
         }
         if (!options.contains(currentArg) || getSuffix == true) {
           options.add(currentArg);
-          if (currentArg.equals(OPTION_TEXTFILE)) {
+          if (currentArg.equals(OPTION_TEXTFILE) || currentArg.equals(OPTION_PRETTYPRINT)) {
             getSuffix = true; //signal next iteration that next argument is part of the suffix the to the prefix argument
           }
         } else {
           throw new ParseException("Invalid argument: \"" + currentArg + "\" cannot be duplicated", -1);
         }
       }
-      else if (currentArg.startsWith("-")) {
+      else if (currentArg.startsWith("-") && !currentArg.equals(OPTION_PRETTYPRINT)) {
         throw new ParseException("Invalid argument: \"" + currentArg + "\" option not recognized", -1);
       }
       else {
@@ -441,17 +491,16 @@ public class Project3 {
 
   /**
    * This method attempts to parse the date section of the args passed in. The criteria for the date and time format
-   * is that it must be in this format: mm/dd/yyyy hh:mm
+   * is that it must be in this format: mm/dd/yyyy hh:mm am|pm
    * This method uses the SimpleDateFormat class to parse and format the date/time argument.
    * @param dateTimeArg         The argument that contains the date and time string
    * @return                    The formatted string of the date and time argument.
-   * @exception ParseException  An error is thrown if dateTimeArg is not of the form "MM/dd/yyy HH:mm"
+   * @exception ParseException  An error is thrown if dateTimeArg is not of the form "MM/dd/yyy h:mm a"
    */
   private static Date formatDateTime(String dateTimeArg) throws ParseException {
     SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy h:mm a");
     dateFormat.setLenient(false); //to disallow dates like 03/33/2014, etc
     Date formattedDate;
-
     try {
       formattedDate = dateFormat.parse(dateTimeArg);
       //resultingStr.append(dateFormat.format(formattedDate));
