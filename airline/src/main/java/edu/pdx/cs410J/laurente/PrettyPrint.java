@@ -96,9 +96,12 @@ public class PrettyPrint implements AirlineDumper {
           append(tabulate(22-departure.length())).append(getFlightDuration(currentFlight.getDeparture(), currentFlight.getArrival())).append("\n");
       }
       writer.print(toWrite.toString());
-      writer.flush();
-      writer.close();
     }
+    else {
+      writer.println("NO FLIGHTS");
+    }
+    writer.flush();
+    writer.close();
   }
 
   /**
