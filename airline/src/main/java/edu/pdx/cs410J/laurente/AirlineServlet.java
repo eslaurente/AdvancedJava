@@ -1,6 +1,7 @@
 package edu.pdx.cs410J.laurente;
 
 import edu.pdx.cs410J.AirportNames;
+import edu.pdx.cs410J.ParserException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -44,8 +45,12 @@ public class AirlineServlet extends HttpServlet
     String query = request.getQueryString();
     int parameterCount = getParamsCount(query, "&");
     System.out.println("paramater count = " + parameterCount);
+    if (this.anAirline == null) {
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No airline exists");
+      return;
+    }
     if (parameterCount == 1) { //query to print all flights of an airline
-      String airlineName = getParameter("name", request);
+      String airlineName = getParameter(NAME, request);
       if (airlineName != null) {
         try {
           writeAllFlights(response, airlineName);
@@ -58,11 +63,19 @@ public class AirlineServlet extends HttpServlet
       }
     } else if (parameterCount == 3) {
       String airlineName, src, dest;
-      airlineName = getParameter("name", request);
-      src = getParameter("src", request);
-      dest = getParameter("dest", request);
+      airlineName = getParameter(NAME, request);
+      src = getParameter(SRC, request);
+      dest = getParameter(DEST, request);
       if (airlineName != null || src != null || dest != null) {
         try {
+          if (AirportNames.getName(src.toUpperCase()) == null) {
+            response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "Invalid airport source code: \"" + src + "\" is not a valid airport");
+            return;
+          }
+          else if (AirportNames.getName(dest.toUpperCase()) == null) {
+            response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "Invalid airport destination code: \"" + dest + "\" is not a valid airport");
+            return;
+          }
           writeFlightWithSrcAndDest(response, airlineName, src, dest);
         } catch (IOException e) {
           response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error occurred when printing: " + e.getMessage());
@@ -86,6 +99,8 @@ public class AirlineServlet extends HttpServlet
     String query = request.getQueryString();
     String airlineName, flightNumStr, srcStr, departStr, destStr, arriveStr;
     Date departure, arrival;
+    int flightNumInt;
+    System.out.println("From doPost(): query string = " + query);
 
     airlineName = getParameter(NAME, request);
     flightNumStr = getParameter(FLIGHT_NUMBER, request);
@@ -93,7 +108,6 @@ public class AirlineServlet extends HttpServlet
     departStr = getParameter(DEPART_TIME, request);
     destStr = getParameter(DEST, request);
     arriveStr = getParameter(ARRIVE_TIME, request);
-
 
     if ( (valueNotNorEmpty(response, NAME, airlineName) == false) ||
       (valueNotNorEmpty(response, FLIGHT_NUMBER, flightNumStr) == false) ||
@@ -104,7 +118,7 @@ public class AirlineServlet extends HttpServlet
       return;
     }
     //Add or check airline name
-    if (this.anAirline != null) {
+    if (this.anAirline == null) {
       this.anAirline = new Airline(airlineName);
     }
     else {
@@ -114,7 +128,7 @@ public class AirlineServlet extends HttpServlet
     }
     //parse flight number
     try {
-      Integer.parseInt(flightNumStr);
+      flightNumInt = Integer.parseInt(flightNumStr);
     } catch (NumberFormatException e) {
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid flight number");
       return;
@@ -125,10 +139,9 @@ public class AirlineServlet extends HttpServlet
       return;
     }
     //parse departure date and time
-    departStr = URLDecoder.decode(departStr, "UTF-8");
     try {
-      departure = formatDateTime(departStr);
-    } catch (ParseException e) {
+      departure = TextParser.parseDateAndTime(departStr);
+    } catch (ParserException e) {
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid format for flight's departure date and time");
       return;
     }
@@ -138,16 +151,23 @@ public class AirlineServlet extends HttpServlet
       return;
     }
     //parse arrival date and time
-    arriveStr = URLDecoder.decode(departStr, "UTF-8");
     try {
-      arrival = formatDateTime(arriveStr);
-    } catch (ParseException e) {
+      arrival = TextParser.parseDateAndTime(arriveStr);
+    } catch (ParserException e) {
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid format for flight's arrival date and time");
       return;
     }
     //if reached here, then parameters are valid. add new flight
-    this.anAirline.addFlight(new Flight(flightNumStr, srcStr, departure, destStr, arrival));
+    System.out.println("name: " + airlineName + ", flightNum: " + flightNumStr + ", src: " + srcStr + ", departTime: " + departStr + ", dest: " + destStr + ", arriveTime: " + arriveStr);
+    Flight currentFlight = new Flight(flightNumInt, srcStr, departure, destStr, arrival);
+    //check if flight already exists
+    if (this.anAirline.getFlights().contains(currentFlight)) {
+      response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "Flight already exists");
+      return;
+    }
+    this.anAirline.addFlight(currentFlight);
 
+    System.out.println("----AIRLINE INFO----\n" + this.anAirline.toString() + "\n\t" + this.anAirline.getFlights().toArray()[0].toString());
     //write as PrettyPrint format
     writeAllFlights(response, this.anAirline.getName());
     response.setStatus( HttpServletResponse.SC_OK);
@@ -155,9 +175,7 @@ public class AirlineServlet extends HttpServlet
 
   private void writeFlightWithSrcAndDest(HttpServletResponse response, String airlineName, String src, String dest)
           throws ServletException, IOException {
-    checkAirlineName(response, airlineName); //check airline name's validity
-    if (this.anAirline == null) {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Airline name does not exist");
+    if (checkAirlineName(response, airlineName) == false) {//check airline name's validity
       return;
     }
     else if (this.anAirline.getFlights().size() <= 0) {
@@ -183,7 +201,7 @@ public class AirlineServlet extends HttpServlet
 
   private boolean checkAirlineName(HttpServletResponse response, String airlineName) throws IOException {
     if (!airlineName.equals(this.anAirline.getName())) {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Airline name does not exist");
+      response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "Airline name \"" + airlineName + "\" does not exist");
       return false;
     }
     //else airline names match and fall through
@@ -191,10 +209,6 @@ public class AirlineServlet extends HttpServlet
   }
 
   private void writeAllFlights(HttpServletResponse response, String airlineName) throws ServletException, IOException {
-    if (this.anAirline == null) {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No airline exists");
-      return;
-    }
     if (checkAirlineName(response, airlineName) == false) {//check airline name validity
       return;
     }
@@ -203,8 +217,11 @@ public class AirlineServlet extends HttpServlet
   }
 
   private int getParamsCount(String str, String regex) {
+    if (str == null) {
+      return 0;
+    }
     String[] result = str.split(regex);
-    return result == null ? 0 : result.length;
+    return result == null ? 1 : result.length;
   }
 
   /**

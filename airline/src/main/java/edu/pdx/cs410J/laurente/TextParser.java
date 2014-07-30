@@ -211,7 +211,7 @@ public class TextParser implements AirlineParser {
    * @param dateAndTimeString   The date and time arguments concatenated for parsing
    * @throws ParserException    Throws an exception if the file contains an invalid date and time format string
    */
-  private Date parseDateAndTime(String dateAndTimeString) throws ParserException {
+  public static Date parseDateAndTime(String dateAndTimeString) throws ParserException {
     SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy h:mm a"); //capital HH means to use 24-hour format
     dateFormat.setLenient(false); //to disallow dates like 03/33/2014, etc
     Date formattedDate;

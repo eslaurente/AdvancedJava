@@ -98,7 +98,7 @@ public class PrettyPrint implements AirlineDumper {
       writer.print(toWrite.toString());
     }
     else {
-      writer.println("NO FLIGHTS");
+      writer.println(toWrite.toString() + "\n**NO FLIGHTS**");
     }
     writer.flush();
     writer.close();
@@ -131,7 +131,7 @@ public class PrettyPrint implements AirlineDumper {
    * @param date    The Date object to be formatted
    * @return        The String representation of the formatted date
    */
-  private String convertDateTimeToShortForm(Date date) {
+  public static String convertDateTimeToShortForm(Date date) {
     SimpleDateFormat shortForm = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
     shortForm.setLenient(false);
     return shortForm.format(date);

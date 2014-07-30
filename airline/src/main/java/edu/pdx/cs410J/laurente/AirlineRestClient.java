@@ -3,6 +3,7 @@ package edu.pdx.cs410J.laurente;
 import edu.pdx.cs410J.web.HttpRequestHelper;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
 * A helper class for accessing the rest client.  Note that this class provides
@@ -52,5 +53,17 @@ public class AirlineRestClient extends HttpRequestHelper
   public Response addKeyValuePair( String key, String value ) throws IOException
   {
     return post( this.url, "key", key, "value", value );
+  }
+
+  public Response getFlightsWithSameSrcAndDest(String... args) throws IOException {
+    return get(this.url, NAME, args[0], SRC, args[1], DEST, args[2]);
+  }
+
+  public Response addFlight(String... args) throws IOException {
+    return post(this.url, NAME, args[0], FLIGHT_NUMBER, args[1], SRC, args[2], DEPART_TIME, args[3], DEST, args[4], ARRIVE_TIME, args[5]);
+  }
+
+  public String getUrl() {
+    return new String(this.url);
   }
 }

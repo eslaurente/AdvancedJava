@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import edu.pdx.cs410J.web.HttpRequestHelper;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.HttpURLConnection;
@@ -36,6 +37,9 @@ public class Project4 {
   public static final String USAGE_README = "-README" + tabulate(15) + "Prints a README for this project and exits";
   public static final String OPTION_PRETTYPRINT = "-pretty";
   public static final String OPTION_TEXTFILE = "-textFile";
+  public static final String OPTION_HOST = "-host";
+  public static final String OPTION_PORT = "-port";
+  private static final String OPTION_SEARCH = "-search";
   public static final String OPTION_PRINT = "-print";
   public static final String OPTION_README = "-README";
   public static final String VERBOSE_USAGE = buildUsageString();
@@ -43,121 +47,210 @@ public class Project4 {
   public static final String ABSOLUTE_PATH = System.getProperty("user.dir");
 
   public static final String MISSING_ARGS = "Missing command line arguments";
+  public static final int RESPONSE_CODE_OK = HttpServletResponse.SC_OK;
 
-  public static void main(String... args) {
-    String hostName = null;
-    String portString = null;
-    String key = null;
-    String value = null;
 
-    for (String arg : args) {
-      if (hostName == null) {
-        hostName = arg;
+  public static void main(String[] args) {
+    Airline anAirline = null;
+    String name, flightNumber, src, departDate, departTime, dest, arrivalDate,
+      arrivalTime, fileName, hostName = null, portName = null;
+    String prettyPrintFileName = "";
+    Date departureFormatted, arrivalFormatted;
+    int argStartingPosition = 0; //Actual starting index offset by the number of options
+    boolean airlineFileExists = true, tryConnection = false, clientConnected = false;
+    List<String> optionsList, searchArgsList = null;
+    File file = null, prettyPrintFile = null;
+    TextParser parser = null;
+    TextDumper dumper = null;
+    PrettyPrint prettyDumper = null;
+    AirlineRestClient client = null;
+    HttpRequestHelper.Response response = null;
 
-      } else if ( portString == null) {
-        portString = arg;
-
-      } else if (key == null) {
-        key = arg;
-
-      } else if (value == null) {
-        value = arg;
-
+    if (args.length == 0) {
+      printUsageMessageErrorAndExit("Missing command line arguments");
+    }
+    //Parse option arguments and collect them.
+    try {
+      optionsList = getOptions(args);
+      argStartingPosition = optionsList.size(); //offset the rest of arguments starting index
+    } catch (ParseException e) {
+      printUsageMessageErrorAndExit(e.getMessage());
+      throw new AssertionError("Unreachable statement reached.");
+    }
+    if (optionsList.contains(OPTION_README)) { //since -README has high precedence, display it ignore parsing
+      printReadme();
+      System.exit(0); //terminate immediately
+    } else {
+      //check -host and -port mutual exclusivity
+      boolean containsHostOption = optionsList.contains(OPTION_HOST);
+      boolean containsPortOption = optionsList.contains(OPTION_PORT);
+      if (((containsHostOption || containsPortOption) && (containsHostOption && containsPortOption)) == false) {
+        if (containsHostOption == true) {
+          printUsageMessageErrorAndExit("Invalid argument: \"-port\" option and argument missing");
+        } else if (containsPortOption == true) {
+          printUsageMessageErrorAndExit("Invalid argument: \"-host\" option and argument missing");
+        }
       } else {
-        usage("Extraneous command line argument: " + arg);
+        tryConnection = true;
       }
     }
-
-    if (hostName == null) {
-        usage( MISSING_ARGS );
-
-    } else if ( portString == null) {
-        usage( "Missing port" );
+    if (tryConnection == true) {
+      client = parseHostPortArgsAndConnect(optionsList);
+      clientConnected = true;
     }
-
-    int port;
-    try {
-        port = Integer.parseInt( portString );
-
-    } catch (NumberFormatException ex) {
-        usage("Port \"" + portString + "\" must be an integer");
-        return;
-    }
-
-    AirlineRestClient client = new AirlineRestClient(hostName, port);
-
-    HttpRequestHelper.Response response;
-    try {
-      if (key == null) {
-        // Print all key/value pairs
-        response = client.getAllKeysAndValues();
-
-      } else if (value == null) {
-        // Print all values of key
-        response = client.getValues(key);
-
-      } else {
-        // Post the key/value pair
-        response = client.addKeyValuePair(key, value);
+    //Check for insufficient or extraneous arguments from list of arguments
+    if (optionsList.contains(OPTION_SEARCH)) {
+      searchArgsList = getSearchArguments(optionsList);
+      if ((args.length - (optionsList.size())) > 0) {
+        printUsageMessageErrorAndExit("Extraneous arguments: only 3 arguments are required for \"-search\"");
       }
-
-      checkResponseCode( HttpURLConnection.HTTP_OK, response);
-
-    } catch ( IOException ex ) {
-      error("While contacting server: " + ex);
-      return;
+      if (tryConnection == false) {
+        printUsageMessageErrorAndExit("Missing arguments: both \"" + OPTION_HOST + "\" and \"" + OPTION_PORT + "\" options are required");
+      }
+      try {
+        response = client.getFlightsWithSameSrcAndDest(searchArgsList.toArray(new String[searchArgsList.size()]));
+        if (servletResponseStillValid(response, RESPONSE_CODE_OK) == false) {
+          System.out.println("**SERVER ERROR** Flight not found because: " + response.getContent());
+          System.exit(1);
+        }
+        else {
+          System.out.println(response.getContent());
+        }
+      } catch (IOException e) {
+        printUsageMessageErrorAndExit("Connection error: could not establish connection with url " + client.getUrl());
+      }
+    } else {
+      if (args.length - argStartingPosition < MAX_NUMBER_OF_ARGS) {
+        printUsageMessageErrorAndExit("Insufficient number of arguments: Not enough information about the flight was given");
+      } else if (args.length - argStartingPosition > MAX_NUMBER_OF_ARGS) {
+        printUsageMessageErrorAndExit("Extraneous argument(s) encountered: only " + MAX_NUMBER_OF_ARGS + " valid arguments are required");
+      }
+      //--Begin parsing the rest of the arguments --
+      //Get name
+      name = getAirlineName(args, argStartingPosition);
+      //Get flight number
+      flightNumber = getFlightNumber(args, argStartingPosition);
+      //Get the source airport code
+      src = getSourceAirportCode(args, argStartingPosition);
+      //Get departure date and time
+      departureFormatted = getDateAndTimeDateDeparture(args, argStartingPosition);
+      //Get destination airport code
+      dest = getDestAirportCode(args, argStartingPosition);
+      //Get arrival date and time
+      arrivalFormatted = getDateAndTimeArrival(args, argStartingPosition);
+      //Create airline object
+      //System.err.println("Depart date/time: " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).parse(departureFormatted.toString()) + ", arrival date/time: " + arrivalFormatted);
+      if (clientConnected == true) {
+        try {
+          response = client.addFlight(name, flightNumber, src, PrettyPrint.convertDateTimeToShortForm(departureFormatted), dest, PrettyPrint.convertDateTimeToShortForm(arrivalFormatted));
+          if (servletResponseStillValid(response, RESPONSE_CODE_OK) == false) {
+            System.out.println("**SERVER ERROR** Could not successfully add the flight because: " + response.getContent());
+            System.exit(1);
+          }
+          else {
+            System.out.println(response.getContent());
+          }
+        } catch (IOException e) {
+          printUsageMessageErrorAndExit("Connection error: could not establish connection with url " + client.getUrl());
+        }
+      }
+      if (optionsList.contains(OPTION_PRINT)) { //Print airline info to standard out if there is -print
+        printAirlineFlightInfo(new Airline(name, new Flight(flightNumber, src, departureFormatted, dest, arrivalFormatted)));
+      }
+    }/*else if (options.contains(OPTION_TEXTFILE)) {
+      try {
+        dumper = new TextDumper(getFileName(options, OPTION_TEXTFILE));
+      } catch (IOException e) {
+        printUsageMessageErrorAndExit("File error: could not access a file called " + getFileName(options, OPTION_TEXTFILE) + "\n\t" + e.getMessage());
+      }
+      if (airlineFileExists == true && parser != null && !parser.fileIsEmpty()) {
+        if (anAirline == null || anAirline.getFlights().size() <= 0) {
+          printUsageMessageErrorAndExit("File malformatted: flight not added because " + dumper.getFileName() + " does not contain a valid airline data");
+        }
+        //The airline object is valid from the parsed airline info from the file. Add the current flight info to it
+        anAirline.addFlight(new Flight(flightNumber, src, departureFormatted, dest, arrivalFormatted));
+      } else {
+        //A new airline object must be created
+        anAirline = new Airline(name, new Flight(flightNumber, src, departureFormatted, dest, arrivalFormatted));
+      }
+      if (parser != null && parser.fileIsEmpty()) {
+        System.out.println("** EMPTY FILE: THE FILE, " + dumper.getFileName() + ", IS OVERWRITTEN **");
+      }
+      writeAirlineFlightInfo(anAirline, dumper);
     }
+    else {
+      anAirline = new Airline(name, new Flight(flightNumber, src, departureFormatted, dest, arrivalFormatted));
+    }
+    //Check if there is any printing to standard out that needs to be done
+    if (anAirline == null) {
+      printUsageMessageErrorAndExit("Error: Something serious went wrong");
+    } */
 
-    System.out.println(response.getContent());
-
+    /*if (options.contains(OPTION_PRETTYPRINT)) { //Pretty print to file or standard out
+      prettyPrinter(prettyDumper, prettyPrintFileName, anAirline);
+    }*/
     System.exit(0);
   }
 
+
   /**
-   * Makes sure that the give response has the expected HTTP status code
-   * @param code The expected status code
-   * @param response The response from the server
+   *
+   * @param response
+   * @param expected
+   * @return
    */
-  private static void checkResponseCode( int code, HttpRequestHelper.Response response )
+  private static boolean servletResponseStillValid(HttpRequestHelper.Response response, int expected)
   {
-    if (response.getCode() != code) {
-      error(String.format("Expected HTTP code %d, got code %d.\n\n%s", code,
-                          response.getCode(), response.getContent()));
+    return response.getCode() == expected;
+  }
+
+  /**
+   *
+   * @param options
+   * @return
+   */
+  private static List<String> getSearchArguments(List<String> options) {
+    List<String> searchArgsList = new ArrayList<String>();
+    int prefixIndex = options.indexOf(OPTION_SEARCH);
+    try {
+      searchArgsList.add(options.get(prefixIndex + 1));
+      searchArgsList.add(options.get(prefixIndex + 2));
+      searchArgsList.add(options.get(prefixIndex + 3));
+    } catch (IndexOutOfBoundsException e) {
+      printUsageMessageErrorAndExit("Missing arguments: \"" + OPTION_SEARCH + "\" must have 3 arguments -- the name, src, and dest of an airline");
     }
-  }
-
-  private static void error( String message )
-  {
-    PrintStream err = System.err;
-    err.println("** " + message);
-
-    System.exit(1);
+    return searchArgsList;
   }
 
   /**
-   * Prints usage information for this program and exits
-   * @param message An error message to print
+   *
+   * @param options
+   * @return
    */
-  private static void usage( String message )
-  {
-    PrintStream err = System.err;
-    err.println("** " + message);
-    err.println();
-    err.println("usage: java Project4 host port [key] [value]");
-    err.println("  host    Host of web server");
-    err.println("  port    Port of web server");
-    err.println("  key     Key to query");
-    err.println("  value   Value to add to server");
-    err.println();
-    err.println("This simple program posts key/value pairs to the server");
-    err.println("If no value is specified, then all values are printed");
-    err.println("If no key is specified, all key/value pairs are printed");
-    err.println();
-
-    System.exit(1);
+  private static AirlineRestClient parseHostPortArgsAndConnect(List<String> options) {
+    String host = null, port = null;
+    int prefixIndex = 0, portNum = 0;
+    try {
+      prefixIndex = options.indexOf(OPTION_HOST);
+      host = options.get(prefixIndex + 1);
+      prefixIndex = options.indexOf(OPTION_PORT);
+      port = options.get(prefixIndex + 1);
+    } catch (IndexOutOfBoundsException e) {
+      printUsageMessageErrorAndExit("Missing arguments: for \"" + OPTION_HOST + "\" and/or \"" + OPTION_PORT + "\" options");
+    }
+    if (host == null) {
+      printUsageMessageErrorAndExit("Missing arguments: for \"" + OPTION_HOST + "\" option");
+    }
+    if (port == null) {
+      printUsageMessageErrorAndExit("Missing arguments: for \"" + OPTION_PORT+ "\" option");
+    }
+    try {
+      portNum = Integer.parseInt(port);
+    } catch (NumberFormatException e) {
+      printUsageMessageErrorAndExit("Invalid argument: port number must be a valid integer");
+    }
+    return new AirlineRestClient(host, portNum);
   }
-
-
 
   /**
    * This method retrieves the pretty file name from the options arguments list
@@ -371,6 +464,7 @@ public class Project4 {
    */
   private static void printAirlineFlightInfo(Airline anAirline) {
     if (anAirline != null) {
+      /*
       int size = anAirline.getFlights().size();
       if (size == 1) {
         System.out.println(anAirline.toString() + ": " + anAirline.getFlights().toArray()[0].toString());
@@ -384,7 +478,8 @@ public class Project4 {
           output.append("\t").append(flight.toString()).append("\n");
         }
         System.out.print(output);
-      }
+      } */
+      System.out.println("Flight added: " + anAirline.getName() + " airline: " + anAirline.getFlights().toArray()[0].toString());
     } else {
       printUsageMessageErrorAndExit("Error: cannot print information about an empty airline");
     }
@@ -401,27 +496,39 @@ public class Project4 {
   private static List<String> getOptions(String[] args) throws ParseException{
     List<String> options = new ArrayList<String>();
     int nonOptionArgCount = 0;
+    int numbSuffixArgRequired = 1, suffixCounter = 0;
     boolean getSuffix = false; //used to determine if the current argument is a suffix to a command
+
     for (String currentArg : args) {
       if (getSuffix == true) {
         options.add(currentArg);
-        getSuffix = false;
+        ++suffixCounter;
+        if (suffixCounter == numbSuffixArgRequired) {
+          getSuffix = false;
+        }
       }
       else if (currentArg.equals(OPTION_PRINT) || currentArg.equals(OPTION_README) ||
-        currentArg.equals(OPTION_TEXTFILE) || currentArg.equals(OPTION_PRETTYPRINT)) {
+        currentArg.equals(OPTION_HOST) || currentArg.equals(OPTION_PORT) || currentArg.equals(OPTION_SEARCH)) {
         if (nonOptionArgCount > 0) {
           throw new ParseException("Invalid argument: \"" + currentArg + "\" optional argument must precede required arguments", -1);
         }
         if (!options.contains(currentArg) || getSuffix == true) {
           options.add(currentArg);
-          if (currentArg.equals(OPTION_TEXTFILE) || currentArg.equals(OPTION_PRETTYPRINT)) {
+          if (currentArg.equals(OPTION_HOST) || currentArg.equals(OPTION_PORT)) {
             getSuffix = true; //signal next iteration that next argument is part of the suffix the to the prefix argument
+            numbSuffixArgRequired = 1;
+            suffixCounter = 0;
+          }
+          else if (currentArg.equals(OPTION_SEARCH)) {
+            getSuffix = true; //signal next iteration that next argument is part of the suffix the to the prefix argument
+            numbSuffixArgRequired = 3;
+            suffixCounter = 0;
           }
         } else {
           throw new ParseException("Invalid argument: \"" + currentArg + "\" cannot be duplicated", -1);
         }
       }
-      else if (currentArg.startsWith("-") && !currentArg.equals(OPTION_PRETTYPRINT)) {
+      else if (currentArg.startsWith("-")) {
         throw new ParseException("Invalid argument: \"" + currentArg + "\" option not recognized", -1);
       }
       else {
