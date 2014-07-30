@@ -13,6 +13,12 @@ public class AirlineRestClient extends HttpRequestHelper
 {
   private static final String WEB_APP = "airline";
   private static final String SERVLET = "flights";
+  public static final String NAME = "name";
+  public static final String FLIGHT_NUMBER = "flightNumber";
+  public static final String SRC = "src";
+  public static final String DEPART_TIME = "departTime";
+  public static final String DEST = "dest";
+  public static final String ARRIVE_TIME = "arriveTime";
 
   private final String url;
 
