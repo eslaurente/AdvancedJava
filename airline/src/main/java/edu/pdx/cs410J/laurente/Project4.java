@@ -35,6 +35,9 @@ public class Project4 {
   public static final String USAGE_TEXTFILE = "-textFile file" + tabulate(8) + "Where to read/write the airline info";
   public static final String USAGE_PRINT = "-print" + tabulate(16) + "Prints a description of the new flight";
   public static final String USAGE_README = "-README" + tabulate(15) + "Prints a README for this project and exits";
+  public static final String USAGE_HOST = "-host hostname" + tabulate(8) + "Host computer on which the server runs";
+  public static final String USAGE_PORT = "-port port" + tabulate(12) + "Port on which the server is listening";
+  public static final String USAGE_SEARCH = "-search" + tabulate(15) + "Search for flights";
   public static final String OPTION_PRETTYPRINT = "-pretty";
   public static final String OPTION_TEXTFILE = "-textFile";
   public static final String OPTION_HOST = "-host";
@@ -148,7 +151,8 @@ public class Project4 {
             System.exit(1);
           }
           else {
-            System.out.println(response.getContent());
+            //possible future option
+            //System.out.println(response.getContent());
           }
         } catch (IOException e) {
           printUsageMessageErrorAndExit("Connection error: could not establish connection with url " + client.getUrl());
@@ -157,7 +161,8 @@ public class Project4 {
       if (optionsList.contains(OPTION_PRINT)) { //Print airline info to standard out if there is -print
         printAirlineFlightInfo(new Airline(name, new Flight(flightNumber, src, departureFormatted, dest, arrivalFormatted)));
       }
-    }/*else if (options.contains(OPTION_TEXTFILE)) {
+    }
+    /*else if (options.contains(OPTION_TEXTFILE)) {
       try {
         dumper = new TextDumper(getFileName(options, OPTION_TEXTFILE));
       } catch (IOException e) {
@@ -192,12 +197,12 @@ public class Project4 {
     System.exit(0);
   }
 
-
   /**
-   *
-   * @param response
-   * @param expected
-   * @return
+   * This method simply checks to see if the current resultling HTTP response object has the same status code value
+   * as the expected parameter status code
+   * @param response     The resulting HTTP response output stream which the actual status code is retrieved from
+   * @param expected     The expected status code number
+   * @return             The boolean value of whether or not the response's status code is equal to the expected
    */
   private static boolean servletResponseStillValid(HttpRequestHelper.Response response, int expected)
   {
@@ -205,9 +210,10 @@ public class Project4 {
   }
 
   /**
-   *
-   * @param options
-   * @return
+   * This method parses the options list for the 3 required arguments of that much follow the "-search" option in the
+   * arguments list
+   * @param options     The list of strings containing the options prefix and their suffix from the argument array args
+   * @return            The search option's argument list
    */
   private static List<String> getSearchArguments(List<String> options) {
     List<String> searchArgsList = new ArrayList<String>();
@@ -223,9 +229,10 @@ public class Project4 {
   }
 
   /**
-   *
-   * @param options
-   * @return
+   * This method first checks that both the "-host hostname" and "-port port" arguments are mutually-exclusive and
+   * creates a new AirlineRestClient client object to be used in the main application
+   * @param options     The list of strings containing the options prefix and their suffix from the argument array args
+   * @return            The client object to be used in the main application
    */
   private static AirlineRestClient parseHostPortArgsAndConnect(List<String> options) {
     String host = null, port = null;
@@ -569,7 +576,7 @@ public class Project4 {
    */
   private static String buildUsageString() {
     StringBuilder usage = new StringBuilder();
-    usage.append("\nusage: java edu.pdx.cs410J.laurente.Project3 [options] <args>\n");
+    usage.append("\nusage: java edu.pdx.cs410J.laurente.Project4 [options] <args>\n");
     usage.append("  args are (in this order):\n");
     usage.append("    ").append(USAGE_NAME).append("\n");
     usage.append("    ").append(USAGE_FLIGHTNUMBER).append("\n");
@@ -578,8 +585,11 @@ public class Project4 {
     usage.append("    ").append(USAGE_DEST).append("\n");
     usage.append("    ").append(USAGE_ARRIVAL).append("\n");
     usage.append("  options are (options may appear in any order):\n");
-    usage.append("    ").append(USAGE_PRETTY).append("\n");
-    usage.append("    ").append(USAGE_TEXTFILE).append("\n");
+    //usage.append("    ").append(USAGE_PRETTY).append("\n");
+    //usage.append("    ").append(USAGE_TEXTFILE).append("\
+    usage.append("    ").append(USAGE_HOST).append("\n");
+    usage.append("    ").append(USAGE_PORT).append("\n");
+    usage.append("    ").append(USAGE_SEARCH).append("\n");
     usage.append("    ").append(USAGE_PRINT).append("\n");
     usage.append("    ").append(USAGE_README);
     return usage.toString();
@@ -626,16 +636,10 @@ public class Project4 {
   public static void printReadme() {
     final String HEADER = "-------------------------------A I R L I N E   F L I G H T   I N F O   P R O G R A M-----------------------------------------";
     final String README = "This program prompts the user for an arline flight information, and allows the user to print " +
-      "out details about\nan airline's flight information. There are eight (8) arguments required for the airline flight info in " +
-      "this exact order:\n  <airline name> <flight number> <airport src> <depart date> <depart time> " +
-      "<airport dest> <arrive date> <arrive time>\nThe date and time arguments must be in mm/dd/yyyy hh:mm format "  +
-      "and the time portion is in the 24-hour format.\nSee usage details below.\n\n[EXAMPLE]\nHere is a complete command line usage example with the " +
-      "printing option:\n\tjava edu.pdx.cs410J.laurente.Project1 -print \"Hawaiian Airlines\" 234 PDX 03/02/2014 04:53 HNL 03/02/2014 21:53\nThe output " +
-      "for this would be:\n\tHawaiian Airlines with 1 flight: Flight 234 departs PDX at 03/02/2014 04:53 arrives HNL at 03/02/2014 21:53\n" +
-      "\nFILES\nThe format for writing and reading airline data from a file is:\n" +
-      "<airline name> <number of flights> flight(s):\n    <flight1 flight number> <source> <depart date> <depart time> <dest> <arrive date> <arrive time>\n" +
-      "    <flight2 flight number> <source> <depart date> <depart time> <dest> <arrive date> <arrive time>\n    etc...<end of file>" +
-      "\nNote: if a file does not exist, it will be created and written to. If the file exists and is empty, it will be overwritten";
+      "out details about\nan airline's flight information. The date argument must be in the \"mm/dd/yyyy\" format"  + " and the time argument must be in the\n" +
+      "\"hh:mm am|pm\" 12-hour format.\nSee usage details below.\n\n[EXAMPLE]\nHere is a complete command line usage example with the " +
+      "printing option:\n\tjava edu.pdx.cs410J.laurente.Project4 -host localhost -port 8080 -print \"Hawaiian Airlines\" \\ \n\t45 HNL 03/02/2013 3:05 pm LAX 03/03/2034 5:09 pm\nThe output " +
+      "for this would be:\n\tFlight added: Hawaiian Airlines airline: Flight 45 departs HNL at 3/2/13 3:05 PM arrives LAX at 3/3/34 5:09 PM\n";
     System.out.println("-----------------------------------------------------------------------------------------------------------------------------");
     System.out.println(HEADER);
     System.out.println("-----------------------------------------------------------------------------------------------------------------------------");

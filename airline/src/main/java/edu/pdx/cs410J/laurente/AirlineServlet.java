@@ -10,11 +10,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URLDecoder;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
+/**
+ * This class is the server web application that parses HTTP requests from a client application. The underlying data is
+ * an airline with a collection of flights represented by the Airline and Flight class
+ */
 public class AirlineServlet extends HttpServlet
 {
   public static final String NAME = "name";
@@ -24,27 +25,20 @@ public class AirlineServlet extends HttpServlet
   public static final String DEST = "dest";
   public static final String ARRIVE_TIME = "arriveTime";
   private Airline anAirline = null;
-  private final Map<String, String> data = new HashMap<String, String>();
 
-  @Override
-  public void init(ServletConfig config) throws ServletException {
-    this.anAirline = null;
-  }
-
-
+  /**
+   * This method parses an HTTP request and outputs and writes the requested data on a response stream
+   * @param request           The HTTP request input stream
+   * @param response          The HTTP response output stream
+   * @throws ServletException Thrown if HttpServlet superclass encounters a problem/error
+   * @throws IOException      Thrown if I/O operations encounter a problem
+   */
   @Override
   protected void doGet( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException
   {
     response.setContentType( "text/plain" );
-    String uri = request.getRequestURI();
-    String lastPart = uri.substring(uri.lastIndexOf('/') + 1, uri.length());
-    System.out.println("uri: " + request.getRequestURI());
-    System.out.println("url: " + request.getRequestURL());
-    System.out.println("query string: " + request.getQueryString());
-    System.out.println("lastPart = " + lastPart);
     String query = request.getQueryString();
     int parameterCount = getParamsCount(query, "&");
-    System.out.println("paramater count = " + parameterCount);
     if (this.anAirline == null) {
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No airline exists");
       return;
@@ -61,7 +55,7 @@ public class AirlineServlet extends HttpServlet
       } else {
         response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Airline name missing");
       }
-    } else if (parameterCount == 3) {
+    } else if (parameterCount == 3) { //try parsing a query to search for the flights that depart and arrive at some airports
       String airlineName, src, dest;
       airlineName = getParameter(NAME, request);
       src = getParameter(SRC, request);
@@ -92,6 +86,13 @@ public class AirlineServlet extends HttpServlet
     response.setStatus( HttpServletResponse.SC_OK );
   }
 
+  /**
+   * This method retrieves key and value parameters sufficient for adding a new flight to the airline
+   * @param request             The HTTP request input stream
+   * @param response            The HTTP response output stream
+   * @throws ServletException   Thrown if HttpServlet superclass encounters a problem/error
+   * @throws IOException        Thrown if I/O operations encounter a problem
+   */
   @Override
   protected void doPost( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException
   {
@@ -100,7 +101,6 @@ public class AirlineServlet extends HttpServlet
     String airlineName, flightNumStr, srcStr, departStr, destStr, arriveStr;
     Date departure, arrival;
     int flightNumInt;
-    System.out.println("From doPost(): query string = " + query);
 
     airlineName = getParameter(NAME, request);
     flightNumStr = getParameter(FLIGHT_NUMBER, request);
@@ -108,7 +108,7 @@ public class AirlineServlet extends HttpServlet
     departStr = getParameter(DEPART_TIME, request);
     destStr = getParameter(DEST, request);
     arriveStr = getParameter(ARRIVE_TIME, request);
-
+    //check if any of the parameters are null or empty
     if ( (valueNotNorEmpty(response, NAME, airlineName) == false) ||
       (valueNotNorEmpty(response, FLIGHT_NUMBER, flightNumStr) == false) ||
       (valueNotNorEmpty(response, SRC, srcStr) == false) ||
@@ -158,7 +158,6 @@ public class AirlineServlet extends HttpServlet
       return;
     }
     //if reached here, then parameters are valid. add new flight
-    System.out.println("name: " + airlineName + ", flightNum: " + flightNumStr + ", src: " + srcStr + ", departTime: " + departStr + ", dest: " + destStr + ", arriveTime: " + arriveStr);
     Flight currentFlight = new Flight(flightNumInt, srcStr, departure, destStr, arrival);
     //check if flight already exists
     if (this.anAirline.getFlights().contains(currentFlight)) {
@@ -167,12 +166,21 @@ public class AirlineServlet extends HttpServlet
     }
     this.anAirline.addFlight(currentFlight);
 
-    System.out.println("----AIRLINE INFO----\n" + this.anAirline.toString() + "\n\t" + this.anAirline.getFlights().toArray()[0].toString());
     //write as PrettyPrint format
     writeAllFlights(response, this.anAirline.getName());
     response.setStatus( HttpServletResponse.SC_OK);
   }
 
+  /**
+   * This method searches for flights that match the same source airport and destination airport if it exists in the
+   * airline. It then uses PrettyPrint.dump() to write the flight information to some output stream in response
+   * @param response          The HTTP response output stream
+   * @param airlineName       The name of the airline
+   * @param src               The 3-letter airport source code
+   * @param dest              The 3-letter airport destination code
+   * @throws ServletException   Thrown if HttpServlet superclass encounters a problem/error
+   * @throws IOException        Thrown if I/O operations encounter a problem
+   */
   private void writeFlightWithSrcAndDest(HttpServletResponse response, String airlineName, String src, String dest)
           throws ServletException, IOException {
     if (checkAirlineName(response, airlineName) == false) {//check airline name's validity
@@ -199,6 +207,13 @@ public class AirlineServlet extends HttpServlet
     new PrettyPrint(new PrintWriter(response.getWriter())).dump(airlineTemp);
   }
 
+  /**
+   * This method checks if an non-null airline name matches the airline name of the current airline
+   * @param response          The HTTP response output stream
+   * @param airlineName       The name of the airline
+   * @return                  The boolean value: true if the name matches, false otherwise
+   * @throws IOException        Thrown if I/O operations encounter a problem
+   */
   private boolean checkAirlineName(HttpServletResponse response, String airlineName) throws IOException {
     if (!airlineName.equals(this.anAirline.getName())) {
       response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "Airline name \"" + airlineName + "\" does not exist");
@@ -208,6 +223,13 @@ public class AirlineServlet extends HttpServlet
     return true;
   }
 
+  /**
+   * This method writes current airline's flight information using PrettyPrint.dump() and response stream
+   * @param response          The HTTP response output stream
+   * @param airlineName       The name of the airline
+   * @throws ServletException Thrown if HttpServlet superclass encounters a problem/error
+   * @throws IOException      Thrown if I/O operations encounter a problem
+   */
   private void writeAllFlights(HttpServletResponse response, String airlineName) throws ServletException, IOException {
     if (checkAirlineName(response, airlineName) == false) {//check airline name validity
       return;
@@ -225,26 +247,13 @@ public class AirlineServlet extends HttpServlet
   }
 
   /**
-   * This method attempts to parse the date section of the args passed in. The criteria for the date and time format
-   * is that it must be in this format: mm/dd/yyyy hh:mm am|pm
-   * This method uses the SimpleDateFormat class to parse and format the date/time argument.
-   * @param dateTimeArg         The argument that contains the date and time string
-   * @return                    The formatted string of the date and time argument.
-   * @exception ParseException  An error is thrown if dateTimeArg is not of the form "MM/dd/yyy h:mm a"
+   * This method checks whether or not a pair of key and value string has a null or is-empty value
+   * @param response      The HTTP response output stream
+   * @param key           The key of the parameter
+   * @param value         The value of the parameter
+   * @return              The boolean value: true if the value is value string has a null or is-empty value
+   * @throws IOException      Thrown if I/O operations encounter a problem
    */
-  private static Date formatDateTime(String dateTimeArg) throws ParseException {
-    SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy h:mm a");
-    dateFormat.setLenient(false); //to disallow dates like 03/33/2014, etc
-    Date formattedDate;
-    try {
-      formattedDate = dateFormat.parse(dateTimeArg);
-      //resultingStr.append(dateFormat.format(formattedDate));
-    } catch (ParseException e) {
-      throw new ParseException("", -1);
-    }
-    return formattedDate;
-  }
-
   private boolean valueNotNorEmpty(HttpServletResponse response, String key, String value) throws IOException{
     if (value == null || value.equals("")) {
       response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Missing value for airline's " + key);
@@ -253,6 +262,12 @@ public class AirlineServlet extends HttpServlet
     return true;
   }
 
+  /**
+   * This method gets the value of a parameter from HTTP request input stream
+   * @param name      The name of the key
+   * @param request   The HTTP request input stream
+   * @return          The value retrieves from request.getParameter(). Can be null
+   */
   private String getParameter(String name, HttpServletRequest request) {
     String value = request.getParameter(name);
     if (value == null || "".equals(value)) {
