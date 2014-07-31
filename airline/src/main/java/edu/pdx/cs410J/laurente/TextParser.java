@@ -4,10 +4,8 @@ import edu.pdx.cs410J.AbstractAirline;
 import edu.pdx.cs410J.AirlineParser;
 import edu.pdx.cs410J.AirportNames;
 import edu.pdx.cs410J.ParserException;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-
 import java.io.*;
 import java.util.*;
 

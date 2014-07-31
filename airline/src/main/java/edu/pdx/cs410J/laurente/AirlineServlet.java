@@ -2,8 +2,6 @@ package edu.pdx.cs410J.laurente;
 
 import edu.pdx.cs410J.AirportNames;
 import edu.pdx.cs410J.ParserException;
-
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;

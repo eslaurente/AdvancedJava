@@ -3,7 +3,6 @@ package edu.pdx.cs410J.laurente;
 import edu.pdx.cs410J.web.HttpRequestHelper;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
 * A helper class for accessing the rest client.  Note that this class provides

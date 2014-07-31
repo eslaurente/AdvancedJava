@@ -3,21 +3,15 @@ import edu.pdx.cs410J.AirportNames;
 import edu.pdx.cs410J.ParserException;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import edu.pdx.cs410J.web.HttpRequestHelper;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.net.HttpURLConnection;
+
 
 /**
 * The main class that parses the command line and communicates with the

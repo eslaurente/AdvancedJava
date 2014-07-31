@@ -3,7 +3,6 @@ package edu.pdx.cs410J.laurente;
 import edu.pdx.cs410J.AbstractAirline;
 import edu.pdx.cs410J.AirlineDumper;
 import edu.pdx.cs410J.AirportNames;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
