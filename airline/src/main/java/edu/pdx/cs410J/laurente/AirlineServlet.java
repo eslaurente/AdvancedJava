@@ -78,7 +78,7 @@ public class AirlineServlet extends HttpServlet
         return;
       }
     } else {
-      response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Missing parameters: request combination not supported");
+      response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "Invalid parameters: request combination not supported");
       return;
     }
     response.setStatus( HttpServletResponse.SC_OK );
