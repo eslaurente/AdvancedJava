@@ -12,10 +12,6 @@ import edu.pdx.cs410J.laurente.client.AirlineService;
 public class AirlineServiceImpl extends RemoteServiceServlet implements AirlineService
 {
   private AbstractAirline theAirline = null;
-  public AbstractAirline ping()
-  {
-    return this.theAirline;
-  }
 
   @Override
   public AbstractAirline addAFlight(String airlineName, AbstractFlight flight) {
@@ -23,6 +19,11 @@ public class AirlineServiceImpl extends RemoteServiceServlet implements AirlineS
       this.theAirline = new Airline(airlineName);
     }
     this.theAirline.addFlight(flight);
+    return this.theAirline;
+  }
+
+  @Override
+  public AbstractAirline syncAirline() {
     return this.theAirline;
   }
 }

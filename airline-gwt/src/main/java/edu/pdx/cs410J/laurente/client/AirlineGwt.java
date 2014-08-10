@@ -1,16 +1,18 @@
 package edu.pdx.cs410J.laurente.client;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.*;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.datepicker.client.DateBox;
-import edu.pdx.cs410J.AbstractFlight;
 import edu.pdx.cs410J.AbstractAirline;
 import edu.pdx.cs410J.AirportNames;
+import edu.pdx.cs410J.ParserException;
 
 import java.util.*;
 
@@ -24,83 +26,72 @@ public class AirlineGwt implements EntryPoint {
   private static final String PM = "PM";
   public static final String ERROR_AIRLINENAME_MISSING = "Invalid input: please enter a valid airline name";
   public static final String ERROR_AIRLINENAME_NOT_MATCH = "Invalid input: the following does not match the airline name on the server: ";
+  public static final String ERROR_INVALID_DATE = "Invalid input: please enter a valid date in the \"mm/dd/yyyy\" format";
+  public static final String ERROR_REMOTE_METHOD_FAILURE = "Error while invoking the remote method: ";
   private RootPanel rootPanel = RootPanel.get();
   private HeaderPanel headerPanel;
+  private VerticalPanel addAFlightPanel;
   private TextBox airlineNameTextBox;
   private TextBox flightNumberTextBox;
   private ListBox airportSrcListBox;
   private Widget departureDatePanel;
   private ListBox airportDestListBox;
   private Widget arrivalDatePanel;
-  private AbstractAirline theAirline = null;
+  private Airline theAirline = null;
   private String airlineName;
   private int flightNumber;
   private String srcAirportCode;
   private Date departureDateAndTime;
   private String destAirportCode;
   private Date arrivalDateAndTime;
+  private Button addFlightButton;
   private final Map<String, String> codesToNamesMapping = AirportNames.getNamesMap();
   private final List<String> airportCodesList = Arrays.asList(codesToNamesMapping.keySet().toArray(new String[0]));
   public static final DateTimeFormat DATE_FORMAT = DateTimeFormat.getFormat("MM/dd/yyyy");
   public static final DateTimeFormat DATE_TIME_FORMAT = DateTimeFormat.getFormat("MM/dd/yyyy hh:mm a");
-
+  private AirlineServiceAsync serviceAsync;
 
   public void onModuleLoad() {
-
-    createLayout();
+    this.serviceAsync = GWT.create(AirlineService.class);
+    //Sync airline object from server with the client
+    this.serviceAsync.syncAirline(new AsyncCallback<AbstractAirline>() {
+      @Override
+      public void onFailure(Throwable caught) {
+        Window.alert(ERROR_REMOTE_METHOD_FAILURE + caught.getMessage());
+      }
+      @Override
+      public void onSuccess(AbstractAirline result) {
+        theAirline = (Airline)result;
+      }
+    });
+    loadLayout();
   }
 
-  private void createLayout() {
+  private void loadLayout() {
     DockPanel p = new DockPanel();
     p.add(new Label("header"), DockPanel.NORTH);
     p.add(new Label("footer"), DockPanel.SOUTH);
 
-
-    Button button = new Button("Add Flight");
-    button.addClickHandler(new ClickHandler() {
-      public void onClick( ClickEvent clickEvent )
-      {
-/*        AirlineServiceAsync async = GWT.create( AirlineService.class );
-
-        async.ping( new AsyncCallback<AbstractAirline>() {
-
-          public void onFailure( Throwable ex )
-          {
-            Window.alert(ex.toString());
-          }
-
-          public void onSuccess( AbstractAirline airline )
-          {
-            if (airline == null) {.text.SimpleDateFormat;
-
-            }
-            StringBuilder sb = new StringBuilder( airline.toString() );
-            Collection<AbstractFlight> flights = airline.getFlights();
-            for ( AbstractFlight flight : flights ) {
-              sb.append(flight);
-              sb.append("\n");
-            }
-            Window.alert( sb.toString() );
-          }
-        });*/
-        getFlightFromForm();
-      }
-    });
-    rootPanel.add(createAddFlightForm());
-    setAddFlightFormHandler();
-    rootPanel.add(button);
+    DecoratorPanel decoratedFormPanel = new DecoratorPanel();
+    this.addAFlightPanel = createAddFlightForm();
+    decoratedFormPanel.add(this.addAFlightPanel);
+    setHandlers();
+    rootPanel.add(decoratedFormPanel);
   }
 
-  private AbstractFlight getFlightFromForm() {
+  private Flight getFlightFromForm() {
     //get airline name
-    this.airlineName = this.airlineNameTextBox.getValue();
-    if (this.airlineName == null || this.airlineName.equals("") || this.airlineName.equals(HINT_AIRLINE_NAME)) {
+    String nameTemp = this.airlineNameTextBox.getValue();
+    if (nameTemp == null || nameTemp.equals("") || nameTemp.equals(HINT_AIRLINE_NAME)) {
       Window.alert(ERROR_AIRLINENAME_MISSING);
       return null;
     }
-    else if (this.theAirline != null && !this.theAirline.getName().equals(this.airlineName)) {
-      Window.alert(ERROR_AIRLINENAME_NOT_MATCH + "\"" + this.airlineName + "\"");
+    else if (this.theAirline != null && !this.theAirline.getName().equals(nameTemp)) {
+      Window.alert(ERROR_AIRLINENAME_NOT_MATCH + "\"" + nameTemp + "\"");
       return null;
+    }
+    else {
+      this.airlineName = nameTemp;
     }
     //get flightNumber
     try {
@@ -113,15 +104,24 @@ public class AirlineGwt implements EntryPoint {
     this.srcAirportCode = parseAirportCode(this.airportSrcListBox);
     //get airport destination code
     this.destAirportCode = parseAirportCode(this.airportDestListBox);
-    //get departure date
-    this.departureDateAndTime = parseDateAndTime(this.departureDatePanel);
-    this.arrivalDateAndTime = parseDateAndTime(this.arrivalDatePanel);
-    Flight aFlight = new Flight(this.flightNumber, this.srcAirportCode, this.departureDateAndTime, this.destAirportCode, this.arrivalDateAndTime);
-    Window.alert(aFlight.toString());
-    return aFlight;
+    //get departure date and time
+    try {
+      this.departureDateAndTime = parseDateAndTime(this.departureDatePanel);
+    } catch (ParserException e) {
+      Window.alert(e.getMessage() + " for the departure");
+      return null;
+    }
+    //get arrival date and time
+    try {
+      this.arrivalDateAndTime = parseDateAndTime(this.arrivalDatePanel);
+    } catch (ParserException e) {
+      Window.alert(e.getMessage() + " for the arrival");
+      return null;
+    }
+    return new Flight(this.flightNumber, this.srcAirportCode, this.departureDateAndTime, this.destAirportCode, this.arrivalDateAndTime);
   }
 
-  private Widget createAddFlightForm() {
+  private VerticalPanel createAddFlightForm() {
     VerticalPanel panel = new VerticalPanel();
     this.departureDatePanel = createDateTimePicker("Departure date and time");
     this.arrivalDatePanel = createDateTimePicker("Arrival date and time");
@@ -131,18 +131,17 @@ public class AirlineGwt implements EntryPoint {
     this.airportDestListBox = new ListBox();
     this.airlineNameTextBox.setText(HINT_AIRLINE_NAME);
     this.flightNumberTextBox.setText(HINT_FLIGHT_NUMBER);
+    this.addFlightButton = new Button("Add flight");
     panel.add(this.airlineNameTextBox);
     panel.add(this.flightNumberTextBox);
     panel.add(getAirportCodePanel("Departing from", this.airportSrcListBox));
     panel.add(this.departureDatePanel);
     panel.add(getAirportCodePanel("Arriving at", this.airportDestListBox));
     panel.add(this.arrivalDatePanel);
+    panel.add(this.addFlightButton);
     panel.setSpacing(6);
-    //Window.alert("Time: " + parseDateAndTime(this.departureDatePanel));
-    //Window.alert("Airport code: " + parseAirportCode(this.airportSrcListBox));
     return panel;
   }
-
 
   private VerticalPanel getAirportCodePanel(String title, ListBox listBoxSource) {
     VerticalPanel panel = new VerticalPanel();
@@ -207,7 +206,7 @@ public class AirlineGwt implements EntryPoint {
     return panel;
   }
 
-  private Date parseDateAndTime(Widget mainPanel) {
+  private Date parseDateAndTime(Widget mainPanel) throws ParserException{
     StringBuilder result = new StringBuilder();
     Widget panel = ((ComplexPanel) mainPanel).getWidget(1);
     int numWidgets = ((ComplexPanel) panel).getWidgetCount();
@@ -215,6 +214,10 @@ public class AirlineGwt implements EntryPoint {
       Widget widget = ((ComplexPanel) panel).getWidget(i);
       if (widget instanceof DateBox) {
         DateBox dateBox = ((DateBox) widget);
+        Date parsedDate = dateBox.getValue();
+        if (parsedDate == null) {
+          throw new ParserException(ERROR_INVALID_DATE);
+        }
         result.append(DATE_FORMAT.format(dateBox.getValue())).append(" ");
       }
       else if (widget instanceof HorizontalPanel) {
@@ -247,7 +250,7 @@ public class AirlineGwt implements EntryPoint {
     return airportCode;
   }
 
-  private void setAddFlightFormHandler() {
+  private void setHandlers() {
     this.airlineNameTextBox.addFocusHandler(new FocusHandler() {
       @Override
       public void onFocus(FocusEvent event) {
@@ -261,6 +264,32 @@ public class AirlineGwt implements EntryPoint {
       public void onFocus(FocusEvent event) {
         if (flightNumberTextBox.getValue().equals(HINT_FLIGHT_NUMBER)) {
           flightNumberTextBox.setValue("");
+        }
+      }
+    });
+    this.addFlightButton.addClickHandler(new ClickHandler() {
+      public void onClick( ClickEvent clickEvent )
+      {
+        Flight flight = getFlightFromForm();
+        if (flight != null) {
+          serviceAsync.addAFlight(airlineName, flight, new AsyncCallback<AbstractAirline>() {
+            @Override
+            public void onFailure(Throwable caught) {
+              Window.alert(ERROR_REMOTE_METHOD_FAILURE + caught.getMessage());
+            }
+            @Override
+            public void onSuccess(AbstractAirline result) {
+              theAirline = (Airline) result;
+              List<Object> listFlights = Arrays.asList((theAirline.getFlights()).toArray());
+              StringBuilder output = new StringBuilder();
+              output.append(theAirline.toString()).append(":\n");
+              for (Object obj : listFlights) {
+                Flight flight = (Flight)obj;
+                output.append("\t").append(flight.toString()).append("\n");
+              }
+              Window.alert(output.toString());
+            }
+          });
         }
       }
     });

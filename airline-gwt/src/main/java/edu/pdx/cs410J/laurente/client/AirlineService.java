@@ -14,8 +14,6 @@ public interface AirlineService extends RemoteService {
   /**
    * Returns the current date and time on the server
    */
-  public AbstractAirline ping();
-
   public AbstractAirline addAFlight(String airlineName, AbstractFlight flight);
-
+  public AbstractAirline syncAirline();
 }

@@ -12,6 +12,6 @@ public interface AirlineServiceAsync {
   /**
    * Return the current date/time on the server
    */
-  void ping(AsyncCallback<AbstractAirline> async);
   void addAFlight(String airlineName, AbstractFlight flight, AsyncCallback<AbstractAirline> async);
+  void syncAirline(AsyncCallback<AbstractAirline> async);
 }
