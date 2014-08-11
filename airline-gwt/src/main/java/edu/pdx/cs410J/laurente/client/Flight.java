@@ -15,7 +15,7 @@ public class Flight extends AbstractFlight implements Comparable {
   private Date departInfo;
   private Date arriveInfo;
   private int flightNum;
-  private final String DATE_TIME_FORMAT = "MM/dd/yyyy hh:mm a";
+  private String DATE_TIME_FORMAT = "MM/dd/yyyy hh:mm a";
 
   /**
    * No-arg constructor

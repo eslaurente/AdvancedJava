@@ -1,6 +1,5 @@
 package edu.pdx.cs410J.laurente.client;
 
-import com.google.gwt.cell.client.DateCell;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.*;
@@ -13,7 +12,6 @@ import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.datepicker.client.DateBox;
-import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.SelectionChangeEvent;
 import com.google.gwt.view.client.SingleSelectionModel;
 import edu.pdx.cs410J.AbstractAirline;
@@ -21,7 +19,6 @@ import edu.pdx.cs410J.AirportNames;
 import edu.pdx.cs410J.ParserException;
 import static com.google.gwt.user.cellview.client.HasKeyboardSelectionPolicy.*;
 
-import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -32,10 +29,13 @@ public class AirlineGwt implements EntryPoint {
   private static final String HINT_FLIGHT_NUMBER = "Flight number";
   private static final String AM = "AM";
   private static final String PM = "PM";
-  public static final String ERROR_AIRLINENAME_MISSING = "Invalid input: please enter a valid airline name";
-  public static final String ERROR_AIRLINENAME_NOT_MATCH = "Invalid input: the following does not match the airline name on the server: ";
-  public static final String ERROR_INVALID_DATE = "Invalid input: please enter a valid date in the \"mm/dd/yyyy\" format";
-  public static final String ERROR_REMOTE_METHOD_FAILURE = "Error while invoking the remote method: ";
+  public static final String ERROR_AIRLINENAME_MISSING = "INVALID INPUT: please enter a valid airline name";
+  public static final String ERROR_AIRLINENAME_NOT_MATCH = "INVALID INPUT: the following does not match the airline name on the server: ";
+  public static final String ERROR_INVALID_DATE = "INVALID INPUT: please enter a valid date in the \"mm/dd/yyyy\" format";
+  public static final String ERROR_REMOTE_METHOD_FAILURE = "ERROR while invoking the remote method: ";
+  public static final String FLIGHT_SEARCH_PREFIX = "flight:";
+  public static final String SRC_SEARCH_PREFIX = "src:";
+  public static final String DEST_SEARCH_PREFIX = "dest:";
   private RootPanel rootPanel = RootPanel.get();
   private HeaderPanel headerPanel;
   private VerticalPanel addAFlightPanel;
@@ -47,11 +47,6 @@ public class AirlineGwt implements EntryPoint {
   private Widget arrivalDatePanel;
   private Airline theAirline = null;
   private String airlineName;
-  private int flightNumber;
-  private String srcAirportCode;
-  private Date departureDateAndTime;
-  private String destAirportCode;
-  private Date arrivalDateAndTime;
   private Button addFlightButton;
   private Label tableAirlineName;
   private CellTable<Flight> flightsTable;
@@ -62,10 +57,19 @@ public class AirlineGwt implements EntryPoint {
   private AirlineServiceAsync serviceAsync;
   private List<Flight> listOfFlights;
   private ScrollPanel flightsTablePanel;
+  private SuggestBox searchBox;
+  private Button searchButton;
+  private List<String> searchQuery;
+  public static final List<String> SEARCH_COMMANDS_LIST = new ArrayList<String>(Arrays.asList("flight:#", "src:ABC", "dest:XYZ", "src:ABC dest:XYZ"));
 
   public void onModuleLoad() {
     this.serviceAsync = GWT.create(AirlineService.class);
     //Sync airline object from server with the client
+    reloadTableWithAllFlights();
+    loadLayout();
+  }
+
+  private void reloadTableWithAllFlights() {
     this.serviceAsync.syncAirline(new AsyncCallback<AbstractAirline>() {
       @Override
       public void onFailure(Throwable caught) {
@@ -77,25 +81,22 @@ public class AirlineGwt implements EntryPoint {
         if (theAirline != null) {
           airlineName = theAirline.getName();
         }
-        updateFlightsTable();
+        updateFlightsTable(false, null);
       }
     });
-    loadLayout();
   }
 
   private void loadLayout() {
     DockPanel p = new DockPanel();
-    //p.add(new Label("header"), DockPanel.NORTH);
-    //p.add(new Label("footer"), DockPanel.SOUTH);
-
     DecoratorPanel decoratedFormPanel = new DecoratorPanel();
     VerticalPanel middlePanel = new VerticalPanel();
+    configureSearchBox();
     this.tableAirlineName = new Label();
-
     this.addAFlightPanel = createAddFlightForm();
     decoratedFormPanel.add(this.addAFlightPanel);
     setHandlers();
     loadTable();
+    middlePanel.add(configureSearchBox());
     middlePanel.add(this.tableAirlineName);
     middlePanel.add(this.flightsTablePanel);
     middlePanel.setSpacing(10);
@@ -106,19 +107,248 @@ public class AirlineGwt implements EntryPoint {
 
   }
 
-  private static class Contact {
-    private final String address;
-    private final Date birthday;
-    private final String name;
+  public HorizontalPanel configureSearchBox() {
+    HorizontalPanel panel = new HorizontalPanel();
+    this.searchButton = new Button();
+    this.searchButton.setText("Search");
+    MultiWordSuggestOracle oracle = new MultiWordSuggestOracle();
+    oracle.setDefaultSuggestionsFromText(SEARCH_COMMANDS_LIST);
+    this.searchBox = new SuggestBox(oracle);
+    this.searchBox.getTextBox().addClickHandler(new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
+        searchBox.showSuggestionList();
+      }
+    });
+    setSearchButtonHandler();
+    panel.add(this.searchBox);
+    panel.add(this.searchButton);
+    panel.setSpacing(10);
+    return panel;
+  }
 
-    public Contact(String name, Date birthday, String address) {
-      this.name = name;
-      this.birthday = birthday;
-      this.address = address;
+  private void setSearchButtonHandler() {
+    final StringBuilder searchUsage = new StringBuilder();
+    searchUsage.append("Only the following search commands are supported:\n");
+    for (String str : this.SEARCH_COMMANDS_LIST) {
+      searchUsage.append(str + "\n");
+    }
+    searchUsage.append("\n# indicates a valid integer for the flight number\nABC and XYZ indicate valid 3-letter airport codes");
+    this.searchButton.addClickHandler(new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
+        String actual = searchBox.getText();
+        if (actual.equals("") || theAirline == null) {
+          reloadTableWithAllFlights();
+          return;
+        }
+        searchQuery = new ArrayList<String>(Arrays.asList(searchBox.getText().split("\\s")));
+        if (searchQuery.size() == 2) {
+          String str1 = searchQuery.get(0);
+          String str2 = searchQuery.get(1);
+          if ((str1.startsWith(SRC_SEARCH_PREFIX) || str1.startsWith(DEST_SEARCH_PREFIX)) && (str2.startsWith(SRC_SEARCH_PREFIX) || str2.startsWith(DEST_SEARCH_PREFIX)) && (!str1.equals(str2))) {
+            try {
+              if (str1.startsWith(SRC_SEARCH_PREFIX)) {
+                searchFlightBySrcAndDest(str1.replaceAll(SRC_SEARCH_PREFIX, ""), str2.replaceAll(DEST_SEARCH_PREFIX, ""));
+              }
+              else {
+                searchFlightBySrcAndDest(str2.replaceAll(SRC_SEARCH_PREFIX, ""), str1.replaceAll(DEST_SEARCH_PREFIX, ""));
+              }
+            } catch (ParserException e) {
+              Window.alert(e.getMessage() + searchUsage);
+            }
+          }
+          else {
+            Window.alert("INVALID INPUT: " + str1 + " " + str2 + " is not a valid search command\n\n" + searchUsage);
+          }
+        }
+        else if (searchQuery.size() == 1) {
+          String str = searchQuery.get(0);
+          if (str.startsWith(FLIGHT_SEARCH_PREFIX)) {
+            try {
+              searchByFlightNumber(str.replaceFirst(FLIGHT_SEARCH_PREFIX, ""));
+            } catch (ParserException e) {
+              Window.alert(e.getMessage() + searchUsage);
+            }
+          }
+          else if (str.startsWith(SRC_SEARCH_PREFIX)) {
+            try {
+              searchFlightBySrc(str.replaceFirst(SRC_SEARCH_PREFIX, ""));
+            } catch (ParserException e) {
+              Window.alert(e.getMessage() + searchUsage);
+            }
+          }
+          else if (str.startsWith(DEST_SEARCH_PREFIX)) {
+            try {
+              searchFlightByDest(str.replaceFirst(DEST_SEARCH_PREFIX, ""));
+            } catch (ParserException e) {
+              Window.alert(e.getMessage() + searchUsage);
+            }
+          }
+          else {
+            Window.alert("INVALID INPUT: " + str + " is not a valid search command\n\n" + searchUsage);
+          }
+        }
+        else {
+          Window.alert("INVALID INPUT:\n\n" + searchUsage);
+        }
+      }
+    });
+  }
+
+  private void searchFlightBySrcAndDest(String src, String dest) throws ParserException {
+    final String srcCode = src.toUpperCase();
+    final String destCode = dest.toUpperCase();
+    boolean srcValid = isValidAirportCode(srcCode);
+    boolean destValid = isValidAirportCode(destCode);
+    if ((srcValid == destValid) && (srcValid == false)) {
+      throw new ParserException("INVALID INPUT: both the src and the dest arguments are not valid airport codes\n\n");
+    }
+    if (srcValid == false) {
+      throw new ParserException("INVALID INPUT: the src argument is not a valid airport code\n\n");
+    }
+    if (destValid == false) {
+      throw new ParserException("INVALID INPUT: the dest argument is not a valid airport code\n\n");
+    }
+    this.serviceAsync.syncAirline(new AsyncCallback<AbstractAirline>() {
+      @Override
+      public void onFailure(Throwable caught) {
+        Window.alert(caught.getMessage() + "\n...working with client data...");
+        List<Flight> resultingList = new ArrayList<Flight>();
+        for (Object object : theAirline.getFlights()) {
+          Flight aFlight = ((Flight) object);
+          if (aFlight.getSource().equals(srcCode) && aFlight.getDestination().equals(destCode)) {
+            resultingList.add(aFlight);
+          }
+        }
+        updateFlightsTable(false, null);
+      }
+      @Override
+      public void onSuccess(AbstractAirline result) {
+        theAirline = ((Airline) result);
+        List<Flight> resultingList = new ArrayList<Flight>();
+        for (Object object : theAirline.getFlights()) {
+          Flight aFlight = ((Flight) object);
+          if (aFlight.getSource().equals(srcCode) && aFlight.getDestination().equals(destCode)) {
+            resultingList.add(aFlight);
+          }
+        }
+        updateFlightsTable(true, resultingList);
+      }
+    });
+  }
+
+  private void searchFlightByDest(String airportCode) throws ParserException {
+    final String code = airportCode.toUpperCase();
+    if (isValidAirportCode(code) == true) {
+      this.serviceAsync.syncAirline(new AsyncCallback<AbstractAirline>() {
+        @Override
+        public void onFailure(Throwable caught) {
+          Window.alert(caught.getMessage() + "\n...working with client data...");
+          List<Flight> resultingList = new ArrayList<Flight>();
+          for (Object object : theAirline.getFlights()) {
+            Flight aFlight = ((Flight) object);
+            if (aFlight.getDestination().equals(code)) {
+              resultingList.add(aFlight);
+            }
+          }
+          updateFlightsTable(false, null);
+        }
+        @Override
+        public void onSuccess(AbstractAirline result) {
+          theAirline = ((Airline) result);
+          List<Flight> resultingList = new ArrayList<Flight>();
+          for (Object object : theAirline.getFlights()) {
+            Flight aFlight = ((Flight) object);
+            if (aFlight.getDestination().equals(code)) {
+              resultingList.add(aFlight);
+            }
+          }
+          updateFlightsTable(true, resultingList);
+        }
+      });
+    }
+    else {
+      throw new ParserException("INVALID INPUT: the dest argument is not a valid airport code\n\n");
     }
   }
 
-  public void loadTable() {
+  private void searchFlightBySrc(String airportCode) throws ParserException {
+    final String code = airportCode.toUpperCase();
+    if (isValidAirportCode(code) == true) {
+      this.serviceAsync.syncAirline(new AsyncCallback<AbstractAirline>() {
+        @Override
+        public void onFailure(Throwable caught) {
+          Window.alert(caught.getMessage() + "\n...working with client data...");
+          List<Flight> resultingList = new ArrayList<Flight>();
+          for (Object object : theAirline.getFlights()) {
+            Flight aFlight = ((Flight) object);
+            if (aFlight.getSource().equals(code)) {
+              resultingList.add(aFlight);
+            }
+          }
+          updateFlightsTable(false, null);
+        }
+        @Override
+        public void onSuccess(AbstractAirline result) {
+          theAirline = ((Airline) result);
+          List<Flight> resultingList = new ArrayList<Flight>();
+          for (Object object : theAirline.getFlights()) {
+            Flight aFlight = ((Flight) object);
+            if (aFlight.getSource().equals(code)) {
+              resultingList.add(aFlight);
+            }
+          }
+          updateFlightsTable(true, resultingList);
+        }
+      });
+    }
+    else {
+      throw new ParserException("INVALID INPUT: the src argument is not a valid airport code\n\n");
+    }
+  }
+
+  private boolean isValidAirportCode(String s) {
+    return codesToNamesMapping.get(s) != null ? true : false;
+  }
+
+  private void searchByFlightNumber(String flightNumberStr) throws ParserException {
+    final int flightNum;
+    try {
+      flightNum = Integer.parseInt(flightNumberStr);
+    } catch (NumberFormatException e) {
+      throw new ParserException("INVALID INPUT: valid integer for flight number is required\n\n");
+    }
+    //sync the airline from server
+    this.serviceAsync.syncAirline(new AsyncCallback<AbstractAirline>() {
+      @Override
+      public void onFailure(Throwable caught) {
+        Window.alert(caught.getMessage() + "\n...working with client data...");
+        List<Flight> resultingList = new ArrayList<Flight>();
+        for (Object object : theAirline.getFlights()) {
+          Flight aFlight = ((Flight) object);
+          if (aFlight.getNumber() == flightNum) {
+            resultingList.add(aFlight);
+          }
+        }
+        updateFlightsTable(false, null);
+      }
+      @Override
+      public void onSuccess(AbstractAirline result) {
+        theAirline = ((Airline) result);
+        List<Flight> resultingList = new ArrayList<Flight>();
+        for (Object object : theAirline.getFlights()) {
+          Flight aFlight = ((Flight) object);
+          if (aFlight.getNumber() == flightNum) {
+            resultingList.add(aFlight);
+          }
+        }
+        updateFlightsTable(true, resultingList);
+      }
+    });
+  }
+
+  private void loadTable() {
     // Create a CellTable.
     this.flightsTable = new CellTable<Flight>();
     this.flightsTable.setKeyboardSelectionPolicy(KeyboardSelectionPolicy.ENABLED);
@@ -181,7 +411,7 @@ public class AirlineGwt implements EntryPoint {
       public void onSelectionChange(SelectionChangeEvent event) {
         Flight selected = selectionModel.getSelectedObject();
         if (selected != null) {
-          Window.alert("You selected: " + selected.toString());
+          Window.alert(airlineName + ": " + selected.toString());
         }
       }
     });
@@ -189,12 +419,17 @@ public class AirlineGwt implements EntryPoint {
     this.flightsTablePanel.setHeight("500px");
   }
 
-  private void updateFlightsTable() {
-    if (this.theAirline != null && this.theAirline.getFlights().size() >= 1) {
+  private void updateFlightsTable(boolean altDataProvider, List<Flight> alternativeList) {
+    if (altDataProvider == false && this.theAirline != null && this.theAirline.getFlights().size() >= 1) {
       this.tableAirlineName.setText("Airline: " + this.airlineName);
       this.listOfFlights = new ArrayList<Flight>(this.theAirline.getFlights());
       this.flightsTable.setRowCount(listOfFlights.size(), true);
       this.flightsTable.setRowData(0, listOfFlights);
+    }
+    else if (altDataProvider == true) {
+      this.tableAirlineName.setText("Airline: " + this.airlineName);
+      this.flightsTable.setRowCount(alternativeList.size(), true);
+      this.flightsTable.setRowData(0, alternativeList);
     }
     else {
       this.flightsTable.setRowCount(0, true);
@@ -207,6 +442,9 @@ public class AirlineGwt implements EntryPoint {
   private Flight getFlightFromForm() {
     //get airline name
     String nameTemp = this.airlineNameTextBox.getValue();
+    int flightNumber;
+    String srcAirportCode, destAirportCode;
+    Date arrivalDateAndTime, departureDateAndTime;
     if (nameTemp == null || nameTemp.equals("") || nameTemp.equals(HINT_AIRLINE_NAME)) {
       Window.alert(ERROR_AIRLINENAME_MISSING);
       return null;
@@ -220,30 +458,35 @@ public class AirlineGwt implements EntryPoint {
     }
     //get flightNumber
     try {
-      this.flightNumber = Integer.parseInt(this.flightNumberTextBox.getValue());
+      flightNumber = Integer.parseInt(this.flightNumberTextBox.getValue());
     } catch (NumberFormatException e) {
-      Window.alert("Invalid input: please enter an integer for the flight number");
+      Window.alert("INVALID INPUT: please enter an integer for the flight number");
       return null;
     }
     //get airport source code
-    this.srcAirportCode = parseAirportCode(this.airportSrcListBox);
+    srcAirportCode = parseAirportCode(this.airportSrcListBox);
     //get airport destination code
-    this.destAirportCode = parseAirportCode(this.airportDestListBox);
+    destAirportCode = parseAirportCode(this.airportDestListBox);
     //get departure date and time
     try {
-      this.departureDateAndTime = parseDateAndTime(this.departureDatePanel);
+      departureDateAndTime = parseDateAndTime(this.departureDatePanel);
     } catch (ParserException e) {
       Window.alert(e.getMessage() + " for the departure");
       return null;
     }
     //get arrival date and time
     try {
-      this.arrivalDateAndTime = parseDateAndTime(this.arrivalDatePanel);
+      arrivalDateAndTime = parseDateAndTime(this.arrivalDatePanel);
     } catch (ParserException e) {
       Window.alert(e.getMessage() + " for the arrival");
       return null;
     }
-    return new Flight(this.flightNumber, this.srcAirportCode, this.departureDateAndTime, this.destAirportCode, this.arrivalDateAndTime);
+    //invalid input if departure date/time is after arrival date/time
+    if (getFlightDuration(departureDateAndTime, arrivalDateAndTime) < 0.0) {
+      Window.alert("INVALID INPUT: could not add flight because arrival date/time precedes departure date/time");
+      return null;
+    }
+    return new Flight(flightNumber, srcAirportCode, departureDateAndTime, destAirportCode, arrivalDateAndTime);
   }
 
   private VerticalPanel createAddFlightForm() {
@@ -393,8 +636,14 @@ public class AirlineGwt implements EntryPoint {
       }
     });
     this.addFlightButton.addClickHandler(new ClickHandler() {
-      public void onClick( ClickEvent clickEvent )
+      public void onClick( final ClickEvent clickEvent )
       {
+        final DecoratedPopupPanel popup = new DecoratedPopupPanel(true);
+        Widget source = (Widget) clickEvent.getSource();
+        int left = source.getAbsoluteLeft() + 10;
+        int top = source.getAbsoluteTop() + 10;
+        popup.setPopupPosition(left, top);
+        //parse add-a-flight form
         Flight flight = getFlightFromForm();
         if (flight != null) {
           serviceAsync.addAFlight(airlineName, flight, new AsyncCallback<AbstractAirline>() {
@@ -404,14 +653,31 @@ public class AirlineGwt implements EntryPoint {
             }
             @Override
             public void onSuccess(AbstractAirline result) {
+              int priorSize = 0, currentSize = 0;
+              if (theAirline != null) {
+                priorSize = theAirline.getFlights().size();
+              }
               theAirline = (Airline) result;
-              updateFlightsTable();
+              if (theAirline != null) {
+                currentSize = theAirline.getFlights().size();
+              }
+              // Show the popup
+              if (currentSize > priorSize) {
+                popup.add(new Label("Flight successfully added!"));
+              }
+              else {
+                popup.add(new Label("That flight already exists!"));
+              }
+              popup.show();
+              updateFlightsTable(false, null);
             }
           });
         }
+        //else flight is null, and errors should have been displayed. Nothing has changed
       }
     });
   }
+
 
   /**
    * This method calculates the duration of the flight from a filght's departure to arrival date/time values
