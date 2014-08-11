@@ -1,19 +1,27 @@
 package edu.pdx.cs410J.laurente.client;
 
+import com.google.gwt.cell.client.DateCell;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.*;
 import com.google.gwt.i18n.client.DateTimeFormat;
+import com.google.gwt.i18n.client.NumberFormat;
+import com.google.gwt.user.cellview.client.*;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.datepicker.client.DateBox;
+import com.google.gwt.view.client.ListDataProvider;
+import com.google.gwt.view.client.SelectionChangeEvent;
+import com.google.gwt.view.client.SingleSelectionModel;
 import edu.pdx.cs410J.AbstractAirline;
 import edu.pdx.cs410J.AirportNames;
 import edu.pdx.cs410J.ParserException;
+import static com.google.gwt.user.cellview.client.HasKeyboardSelectionPolicy.*;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -45,11 +53,15 @@ public class AirlineGwt implements EntryPoint {
   private String destAirportCode;
   private Date arrivalDateAndTime;
   private Button addFlightButton;
+  private Label tableAirlineName;
+  private CellTable<Flight> flightsTable;
   private final Map<String, String> codesToNamesMapping = AirportNames.getNamesMap();
   private final List<String> airportCodesList = Arrays.asList(codesToNamesMapping.keySet().toArray(new String[0]));
   public static final DateTimeFormat DATE_FORMAT = DateTimeFormat.getFormat("MM/dd/yyyy");
   public static final DateTimeFormat DATE_TIME_FORMAT = DateTimeFormat.getFormat("MM/dd/yyyy hh:mm a");
   private AirlineServiceAsync serviceAsync;
+  private List<Flight> listOfFlights;
+  private ScrollPanel flightsTablePanel;
 
   public void onModuleLoad() {
     this.serviceAsync = GWT.create(AirlineService.class);
@@ -62,6 +74,10 @@ public class AirlineGwt implements EntryPoint {
       @Override
       public void onSuccess(AbstractAirline result) {
         theAirline = (Airline)result;
+        if (theAirline != null) {
+          airlineName = theAirline.getName();
+        }
+        updateFlightsTable();
       }
     });
     loadLayout();
@@ -69,15 +85,124 @@ public class AirlineGwt implements EntryPoint {
 
   private void loadLayout() {
     DockPanel p = new DockPanel();
-    p.add(new Label("header"), DockPanel.NORTH);
-    p.add(new Label("footer"), DockPanel.SOUTH);
+    //p.add(new Label("header"), DockPanel.NORTH);
+    //p.add(new Label("footer"), DockPanel.SOUTH);
 
     DecoratorPanel decoratedFormPanel = new DecoratorPanel();
+    VerticalPanel middlePanel = new VerticalPanel();
+    this.tableAirlineName = new Label();
+
     this.addAFlightPanel = createAddFlightForm();
     decoratedFormPanel.add(this.addAFlightPanel);
     setHandlers();
-    rootPanel.add(decoratedFormPanel);
+    loadTable();
+    middlePanel.add(this.tableAirlineName);
+    middlePanel.add(this.flightsTablePanel);
+    middlePanel.setSpacing(10);
+    p.add(decoratedFormPanel, DockPanel.WEST);
+    p.add(middlePanel, DockPanel.WEST);
+    p.setSpacing(10);
+    rootPanel.add(p);
+
   }
+
+  private static class Contact {
+    private final String address;
+    private final Date birthday;
+    private final String name;
+
+    public Contact(String name, Date birthday, String address) {
+      this.name = name;
+      this.birthday = birthday;
+      this.address = address;
+    }
+  }
+
+  public void loadTable() {
+    // Create a CellTable.
+    this.flightsTable = new CellTable<Flight>();
+    this.flightsTable.setKeyboardSelectionPolicy(KeyboardSelectionPolicy.ENABLED);
+    // Add the flight number column
+    TextColumn<Flight> flightNumColumn = new TextColumn<Flight>() {
+      @Override
+      public String getValue(Flight object) {
+        return String.valueOf(object.getNumber());
+      }
+    };
+    this.flightsTable.addColumn(flightNumColumn, "Flight Number");
+    // Add source airport column
+    TextColumn<Flight> srcAiportColumn = new TextColumn<Flight>() {
+      @Override
+      public String getValue(Flight object) {
+        String src = object.getSource();
+        return codesToNamesMapping.get(src) + " (" + src +")";
+      }
+    };
+    this.flightsTable.addColumn(srcAiportColumn, "Departing from");
+    // Add departure column
+    TextColumn<Flight> departureColumn = new TextColumn<Flight>() {
+      @Override
+      public String getValue(Flight object) {
+        return object.getDepartureString();
+      }
+    };
+    this.flightsTable.addColumn(departureColumn, "Departure date/time");
+    // Add destination airport column
+    TextColumn<Flight> destAiportColumn = new TextColumn<Flight>() {
+      @Override
+      public String getValue(Flight object) {
+        String dest = object.getDestination();
+        return codesToNamesMapping.get(dest) + " (" + dest +")";
+      }
+    };
+    this.flightsTable.addColumn(destAiportColumn, "Arriving at");
+    // Add arrival column
+    TextColumn<Flight> arrivalColumn = new TextColumn<Flight>() {
+      @Override
+      public String getValue(Flight object) {
+        return object.getArrivalString();
+      }
+    };
+    this.flightsTable.addColumn(arrivalColumn, "Arrival date/time");
+    // Add duration column
+    TextColumn<Flight> durationColumn = new TextColumn<Flight>() {
+      @Override
+      public String getValue(Flight object) {
+        // formatting for two decimal places
+        NumberFormat fmt = NumberFormat.getDecimalFormat().overrideFractionDigits(0, 2);
+        return String.valueOf(fmt.format(getFlightDuration(object.getDeparture(), object.getArrival())));
+      }
+    };
+    this.flightsTable.addColumn(durationColumn, "Duration (hrs)");
+    // Add a selection model to handle user selection.
+    final SingleSelectionModel<Flight> selectionModel = new SingleSelectionModel<Flight>();
+    this.flightsTable.setSelectionModel(selectionModel);
+    selectionModel.addSelectionChangeHandler(new SelectionChangeEvent.Handler() {
+      public void onSelectionChange(SelectionChangeEvent event) {
+        Flight selected = selectionModel.getSelectedObject();
+        if (selected != null) {
+          Window.alert("You selected: " + selected.toString());
+        }
+      }
+    });
+    this.flightsTablePanel = new ScrollPanel(this.flightsTable);
+    this.flightsTablePanel.setHeight("500px");
+  }
+
+  private void updateFlightsTable() {
+    if (this.theAirline != null && this.theAirline.getFlights().size() >= 1) {
+      this.tableAirlineName.setText("Airline: " + this.airlineName);
+      this.listOfFlights = new ArrayList<Flight>(this.theAirline.getFlights());
+      this.flightsTable.setRowCount(listOfFlights.size(), true);
+      this.flightsTable.setRowData(0, listOfFlights);
+    }
+    else {
+      this.flightsTable.setRowCount(0, true);
+      this.flightsTable.setRowData(0, new ArrayList<Flight>());
+      this.tableAirlineName.setText("NO AIRLINE");
+    }
+  }
+
 
   private Flight getFlightFromForm() {
     //get airline name
@@ -280,18 +405,21 @@ public class AirlineGwt implements EntryPoint {
             @Override
             public void onSuccess(AbstractAirline result) {
               theAirline = (Airline) result;
-              List<Object> listFlights = Arrays.asList((theAirline.getFlights()).toArray());
-              StringBuilder output = new StringBuilder();
-              output.append(theAirline.toString()).append(":\n");
-              for (Object obj : listFlights) {
-                Flight flight = (Flight)obj;
-                output.append("\t").append(flight.toString()).append("\n");
-              }
-              Window.alert(output.toString());
+              updateFlightsTable();
             }
           });
         }
       }
     });
+  }
+
+  /**
+   * This method calculates the duration of the flight from a filght's departure to arrival date/time values
+   * @param depart    The departure date/time of the flight
+   * @param arrive    The arrival date/time of the flight
+   * @return          The flight duration in long
+   */
+  private double getFlightDuration(Date depart, Date arrive) {
+    return (((arrive.getTime() - depart.getTime()) * 1d) / (3600000d));
   }
 }
