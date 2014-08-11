@@ -2,10 +2,12 @@ package edu.pdx.cs410J.laurente.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.*;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.user.cellview.client.*;
+import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
@@ -29,13 +31,13 @@ public class AirlineGwt implements EntryPoint {
   private static final String HINT_FLIGHT_NUMBER = "Flight number";
   private static final String AM = "AM";
   private static final String PM = "PM";
-  public static final String ERROR_AIRLINENAME_MISSING = "INVALID INPUT: please enter a valid airline name";
-  public static final String ERROR_AIRLINENAME_NOT_MATCH = "INVALID INPUT: the following does not match the airline name on the server: ";
-  public static final String ERROR_INVALID_DATE = "INVALID INPUT: please enter a valid date in the \"mm/dd/yyyy\" format";
-  public static final String ERROR_REMOTE_METHOD_FAILURE = "ERROR while invoking the remote method: ";
-  public static final String FLIGHT_SEARCH_PREFIX = "flight:";
-  public static final String SRC_SEARCH_PREFIX = "src:";
-  public static final String DEST_SEARCH_PREFIX = "dest:";
+  private static final String ERROR_AIRLINENAME_MISSING = "INVALID INPUT: please enter a valid airline name";
+  private static final String ERROR_AIRLINENAME_NOT_MATCH = "INVALID INPUT: the following does not match the airline name on the server: ";
+  private static final String ERROR_INVALID_DATE = "INVALID INPUT: please enter a valid date in the \"mm/dd/yyyy\" format";
+  private static final String ERROR_REMOTE_METHOD_FAILURE = "ERROR while invoking the remote method: ";
+  private static final String FLIGHT_SEARCH_PREFIX = "flight:";
+  private static final String SRC_SEARCH_PREFIX = "src:";
+  private static final String DEST_SEARCH_PREFIX = "dest:";
   private RootPanel rootPanel = RootPanel.get();
   private HeaderPanel headerPanel;
   private VerticalPanel addAFlightPanel;
@@ -45,24 +47,25 @@ public class AirlineGwt implements EntryPoint {
   private Widget departureDatePanel;
   private ListBox airportDestListBox;
   private Widget arrivalDatePanel;
-  private Airline theAirline = null;
+  private Airline theAirline;
   private String airlineName;
   private Button addFlightButton;
   private Label tableAirlineName;
   private CellTable<Flight> flightsTable;
   private final Map<String, String> codesToNamesMapping = AirportNames.getNamesMap();
   private final List<String> airportCodesList = Arrays.asList(codesToNamesMapping.keySet().toArray(new String[0]));
-  public static final DateTimeFormat DATE_FORMAT = DateTimeFormat.getFormat("MM/dd/yyyy");
-  public static final DateTimeFormat DATE_TIME_FORMAT = DateTimeFormat.getFormat("MM/dd/yyyy hh:mm a");
+  private static final DateTimeFormat DATE_FORMAT = DateTimeFormat.getFormat("MM/dd/yyyy");
+  private static final DateTimeFormat DATE_TIME_FORMAT = DateTimeFormat.getFormat("MM/dd/yyyy hh:mm a");
   private AirlineServiceAsync serviceAsync;
   private List<Flight> listOfFlights;
   private ScrollPanel flightsTablePanel;
   private SuggestBox searchBox;
   private Button searchButton;
   private List<String> searchQuery;
-  public static final List<String> SEARCH_COMMANDS_LIST = new ArrayList<String>(Arrays.asList("flight:#", "src:ABC", "dest:XYZ", "src:ABC dest:XYZ"));
+  private static final List<String> SEARCH_COMMANDS_LIST = new ArrayList<String>(Arrays.asList("flight:#", "src:ABC", "dest:XYZ", "src:ABC dest:XYZ"));
 
   public void onModuleLoad() {
+    this.theAirline = null;
     this.serviceAsync = GWT.create(AirlineService.class);
     //Sync airline object from server with the client
     reloadTableWithAllFlights();
@@ -90,24 +93,54 @@ public class AirlineGwt implements EntryPoint {
     DockPanel p = new DockPanel();
     DecoratorPanel decoratedFormPanel = new DecoratorPanel();
     VerticalPanel middlePanel = new VerticalPanel();
-    configureSearchBox();
     this.tableAirlineName = new Label();
     this.addAFlightPanel = createAddFlightForm();
     decoratedFormPanel.add(this.addAFlightPanel);
     setHandlers();
     loadTable();
+    middlePanel.setWidth("100%");
+    middlePanel.setHeight("100%");
+    middlePanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+    middlePanel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
     middlePanel.add(configureSearchBox());
     middlePanel.add(this.tableAirlineName);
     middlePanel.add(this.flightsTablePanel);
     middlePanel.setSpacing(10);
     p.add(decoratedFormPanel, DockPanel.WEST);
     p.add(middlePanel, DockPanel.WEST);
+    p.add(menuBarPanel(), DockPanel.CENTER);
     p.setSpacing(10);
+    this.tableAirlineName.getElement().getStyle().setFontSize(16, Style.Unit.PX);
+    this.tableAirlineName.getElement().getStyle().setFontStyle(Style.FontStyle.ITALIC);
     rootPanel.add(p);
 
   }
 
-  public HorizontalPanel configureSearchBox() {
+  private HorizontalPanel menuBarPanel() {
+    HorizontalPanel panel = new HorizontalPanel();
+    MenuBar menuBar = new MenuBar();
+    MenuBar help = new MenuBar(true);
+    menuBar.addItem("Help", help);
+    help.addItem("README", new Command() {
+      @Override
+      public void execute() {
+        Window.alert("README");
+      }
+    });
+    help.addItem("About", new Command() {
+      @Override
+      public void execute() {
+        Window.alert("About this program");
+      }
+    });
+    //panel.setWidth("100px");
+   // panel.setBorderWidth(1);
+    //panel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_RIGHT);
+    panel.add(menuBar);
+    return panel;
+  }
+
+  private HorizontalPanel configureSearchBox() {
     HorizontalPanel panel = new HorizontalPanel();
     this.searchButton = new Button();
     this.searchButton.setText("Search");
@@ -133,7 +166,8 @@ public class AirlineGwt implements EntryPoint {
     for (String str : this.SEARCH_COMMANDS_LIST) {
       searchUsage.append(str + "\n");
     }
-    searchUsage.append("\n# indicates a valid integer for the flight number\nABC and XYZ indicate valid 3-letter airport codes");
+    searchUsage.append("\n# indicates a valid integer for the flight number\nABC and XYZ indicate valid 3-letter airport codes\n");
+    searchUsage.append("*NOTE: a blank search displays all of the airline's flights");
     this.searchButton.addClickHandler(new ClickHandler() {
       @Override
       public void onClick(ClickEvent event) {
@@ -425,6 +459,7 @@ public class AirlineGwt implements EntryPoint {
       this.listOfFlights = new ArrayList<Flight>(this.theAirline.getFlights());
       this.flightsTable.setRowCount(listOfFlights.size(), true);
       this.flightsTable.setRowData(0, listOfFlights);
+      this.searchBox.setText("");
     }
     else if (altDataProvider == true) {
       this.tableAirlineName.setText("Airline: " + this.airlineName);
@@ -676,6 +711,11 @@ public class AirlineGwt implements EntryPoint {
         //else flight is null, and errors should have been displayed. Nothing has changed
       }
     });
+  }
+
+  public String buildReadMe() {
+    StringBuilder str = new StringBuilder();
+    return str.toString();
   }
 
 
