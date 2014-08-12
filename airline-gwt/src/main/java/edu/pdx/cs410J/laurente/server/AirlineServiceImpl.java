@@ -26,4 +26,16 @@ public class AirlineServiceImpl extends RemoteServiceServlet implements AirlineS
   public AbstractAirline syncAirline() {
     return this.theAirline;
   }
+
+  @Override
+  public boolean deleteFlight(AbstractFlight flight) {
+    if (this.theAirline == null) {
+      return false;
+    }
+    boolean result = this.theAirline.getFlights().remove(flight);
+    if (result == true && this.theAirline.getFlights().size() == 0) {
+      this.theAirline = null;
+    }
+    return result;
+  }
 }

@@ -4,8 +4,11 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.*;
+import com.google.gwt.event.logical.shared.CloseEvent;
+import com.google.gwt.event.logical.shared.CloseHandler;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.i18n.client.NumberFormat;
+import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.*;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
@@ -61,8 +64,65 @@ public class AirlineGwt implements EntryPoint {
   private ScrollPanel flightsTablePanel;
   private SuggestBox searchBox;
   private Button searchButton;
+  private Button deleteFlightButton;
+  private Flight flightToDelete;
   private List<String> searchQuery;
   private static final List<String> SEARCH_COMMANDS_LIST = new ArrayList<String>(Arrays.asList("flight:#", "src:ABC", "dest:XYZ", "src:ABC dest:XYZ"));
+
+  private static class PopupDialogBox extends DialogBox {
+    public boolean promptBooleanValue = false;
+    public PopupDialogBox(String text, boolean isPrompt) {
+      setAnimationEnabled(true);
+      setGlassEnabled(true);
+      setAutoHideEnabled(true);
+      Button ok = null;
+      Button yes = null;
+      Button no = null;
+      if (isPrompt == false) {
+        ok = new Button("OK");
+        ok.addClickHandler(new ClickHandler() {
+          public void onClick(ClickEvent event) {
+            PopupDialogBox.this.hide();
+          }
+        });
+      }
+      else {
+        setAutoHideEnabled(false);
+        yes = new Button("Yes");
+        no = new Button("No");
+        yes.addClickHandler(new ClickHandler() {
+          public void onClick(ClickEvent event) {
+            PopupDialogBox.this.promptBooleanValue = true;
+            PopupDialogBox.this.hide();
+          }
+        });
+        no.addClickHandler(new ClickHandler() {
+          public void onClick(ClickEvent event) {
+            PopupDialogBox.this.promptBooleanValue = false;
+            PopupDialogBox.this.hide();
+          }
+        });
+      }
+      VerticalPanel panel = new VerticalPanel();
+      panel.setSpacing(10);
+      HTML html = new HTML(new SafeHtmlBuilder().appendEscapedLines(text).toSafeHtml());
+      panel.add(html);
+      panel.setVerticalAlignment(VerticalPanel.ALIGN_MIDDLE);
+      panel.setHorizontalAlignment(HorizontalPanel.ALIGN_CENTER);
+      if (isPrompt == false) {
+        panel.add(ok);
+      }
+      else {
+        HorizontalPanel yesNoPanel = new HorizontalPanel();
+        yesNoPanel.add(yes);
+        yesNoPanel.add(no);
+        yesNoPanel.setSpacing(10);
+        panel.add(yesNoPanel);
+      }
+      setWidget(panel);
+      center();
+    }
+  }
 
   public void onModuleLoad() {
     this.theAirline = null;
@@ -84,6 +144,9 @@ public class AirlineGwt implements EntryPoint {
         if (theAirline != null) {
           airlineName = theAirline.getName();
         }
+        else {
+          airlineName = "";
+        }
         updateFlightsTable(false, null);
       }
     });
@@ -95,6 +158,9 @@ public class AirlineGwt implements EntryPoint {
     VerticalPanel middlePanel = new VerticalPanel();
     this.tableAirlineName = new Label();
     this.addAFlightPanel = createAddFlightForm();
+    this.deleteFlightButton = new Button();
+    this.deleteFlightButton.setText("Delete Flight");
+    this.deleteFlightButton.setEnabled(false);
     decoratedFormPanel.add(this.addAFlightPanel);
     setHandlers();
     loadTable();
@@ -105,6 +171,7 @@ public class AirlineGwt implements EntryPoint {
     middlePanel.add(configureSearchBox());
     middlePanel.add(this.tableAirlineName);
     middlePanel.add(this.flightsTablePanel);
+    middlePanel.add(this.deleteFlightButton);
     middlePanel.setSpacing(10);
     p.add(decoratedFormPanel, DockPanel.WEST);
     p.add(middlePanel, DockPanel.WEST);
@@ -124,13 +191,13 @@ public class AirlineGwt implements EntryPoint {
     help.addItem("README", new Command() {
       @Override
       public void execute() {
-        Window.alert("README");
+        new PopupDialogBox(buildReadMeText(), false).show();
       }
     });
     help.addItem("About", new Command() {
       @Override
       public void execute() {
-        Window.alert("About this program");
+        new PopupDialogBox("About this program", false).show();
       }
     });
     //panel.setWidth("100px");
@@ -189,11 +256,11 @@ public class AirlineGwt implements EntryPoint {
                 searchFlightBySrcAndDest(str2.replaceAll(SRC_SEARCH_PREFIX, ""), str1.replaceAll(DEST_SEARCH_PREFIX, ""));
               }
             } catch (ParserException e) {
-              Window.alert(e.getMessage() + searchUsage);
+              new PopupDialogBox(e.getMessage() + searchUsage, false).show();
             }
           }
           else {
-            Window.alert("INVALID INPUT: " + str1 + " " + str2 + " is not a valid search command\n\n" + searchUsage);
+            new PopupDialogBox("INVALID INPUT: " + str1 + " " + str2 + " is not a valid search command\n\n" + searchUsage, false).show();
           }
         }
         else if (searchQuery.size() == 1) {
@@ -202,29 +269,29 @@ public class AirlineGwt implements EntryPoint {
             try {
               searchByFlightNumber(str.replaceFirst(FLIGHT_SEARCH_PREFIX, ""));
             } catch (ParserException e) {
-              Window.alert(e.getMessage() + searchUsage);
+              new PopupDialogBox(e.getMessage() + searchUsage, false).show();
             }
           }
           else if (str.startsWith(SRC_SEARCH_PREFIX)) {
             try {
               searchFlightBySrc(str.replaceFirst(SRC_SEARCH_PREFIX, ""));
             } catch (ParserException e) {
-              Window.alert(e.getMessage() + searchUsage);
+              new PopupDialogBox(e.getMessage() + searchUsage, false).show();
             }
           }
           else if (str.startsWith(DEST_SEARCH_PREFIX)) {
             try {
               searchFlightByDest(str.replaceFirst(DEST_SEARCH_PREFIX, ""));
             } catch (ParserException e) {
-              Window.alert(e.getMessage() + searchUsage);
+              new PopupDialogBox(e.getMessage() + searchUsage, false).show();
             }
           }
           else {
-            Window.alert("INVALID INPUT: " + str + " is not a valid search command\n\n" + searchUsage);
+            new PopupDialogBox("INVALID INPUT: " + str + " is not a valid search command\n\n" + searchUsage, false).show();
           }
         }
         else {
-          Window.alert("INVALID INPUT:\n\n" + searchUsage);
+          new PopupDialogBox("INVALID INPUT:\n\n" + searchUsage, false).show();
         }
       }
     });
@@ -382,6 +449,35 @@ public class AirlineGwt implements EntryPoint {
     });
   }
 
+  private void deleteAFlight(final Flight flight) {
+    final DecoratedPopupPanel popup = new DecoratedPopupPanel(true);
+    popup.center();
+    serviceAsync.deleteFlight(flight, new AsyncCallback<Boolean>() {
+      @Override
+      public void onFailure(Throwable caught) {
+        Window.alert(caught.getMessage() + "\n...working with client data...");
+        if (theAirline.getFlights().remove(flight) == false) {
+          popup.add(new Label("ERROR: Could not remove that flight!"));
+        }
+        else {
+          popup.add(new Label("Flight successfully deleted!"));
+        }
+        reloadTableWithAllFlights();
+      }
+      @Override
+      public void onSuccess(Boolean result) {
+        if(result == true) {
+          popup.add(new Label("Flight successfully deleted!"));
+        }
+        else {
+          popup.add(new Label("ERROR: Could not remove that flight!"));
+        }
+        popup.show();
+        reloadTableWithAllFlights();
+      }
+    });
+  }
+
   private void loadTable() {
     // Create a CellTable.
     this.flightsTable = new CellTable<Flight>();
@@ -443,33 +539,44 @@ public class AirlineGwt implements EntryPoint {
     this.flightsTable.setSelectionModel(selectionModel);
     selectionModel.addSelectionChangeHandler(new SelectionChangeEvent.Handler() {
       public void onSelectionChange(SelectionChangeEvent event) {
+        deleteFlightButton.setEnabled(true);
         Flight selected = selectionModel.getSelectedObject();
         if (selected != null) {
-          Window.alert(airlineName + ": " + selected.toString());
+          flightToDelete = selected;
+          //new PopupDialogBox(airlineName + ": " + selected.toString()).show();
         }
       }
     });
     this.flightsTablePanel = new ScrollPanel(this.flightsTable);
-    this.flightsTablePanel.setHeight("500px");
+    this.flightsTablePanel.setHeight("350px");
   }
 
   private void updateFlightsTable(boolean altDataProvider, List<Flight> alternativeList) {
     if (altDataProvider == false && this.theAirline != null && this.theAirline.getFlights().size() >= 1) {
-      this.tableAirlineName.setText("Airline: " + this.airlineName);
+      this.tableAirlineName.setText("AIRLINE: " + this.airlineName);
       this.listOfFlights = new ArrayList<Flight>(this.theAirline.getFlights());
       this.flightsTable.setRowCount(listOfFlights.size(), true);
       this.flightsTable.setRowData(0, listOfFlights);
       this.searchBox.setText("");
+      if (this.listOfFlights.size() == 1) {
+        this.flightToDelete = this.listOfFlights.get(0);
+        this.deleteFlightButton.setEnabled(true);
+      }
     }
     else if (altDataProvider == true) {
-      this.tableAirlineName.setText("Airline: " + this.airlineName);
+      this.tableAirlineName.setText("AIRLINE: " + this.airlineName);
       this.flightsTable.setRowCount(alternativeList.size(), true);
       this.flightsTable.setRowData(0, alternativeList);
+      if (alternativeList.size() == 1) {
+        this.flightToDelete = alternativeList.get(0);
+        this.deleteFlightButton.setEnabled(true);
+      }
     }
     else {
       this.flightsTable.setRowCount(0, true);
       this.flightsTable.setRowData(0, new ArrayList<Flight>());
       this.tableAirlineName.setText("NO AIRLINE");
+      this.deleteFlightButton.setEnabled(false);
     }
   }
 
@@ -481,11 +588,11 @@ public class AirlineGwt implements EntryPoint {
     String srcAirportCode, destAirportCode;
     Date arrivalDateAndTime, departureDateAndTime;
     if (nameTemp == null || nameTemp.equals("") || nameTemp.equals(HINT_AIRLINE_NAME)) {
-      Window.alert(ERROR_AIRLINENAME_MISSING);
+      new PopupDialogBox(ERROR_AIRLINENAME_MISSING, false).show();
       return null;
     }
     else if (this.theAirline != null && !this.theAirline.getName().equals(nameTemp)) {
-      Window.alert(ERROR_AIRLINENAME_NOT_MATCH + "\"" + nameTemp + "\"");
+      new PopupDialogBox(ERROR_AIRLINENAME_NOT_MATCH + "\"" + nameTemp + "\"", false).show();
       return null;
     }
     else {
@@ -495,7 +602,7 @@ public class AirlineGwt implements EntryPoint {
     try {
       flightNumber = Integer.parseInt(this.flightNumberTextBox.getValue());
     } catch (NumberFormatException e) {
-      Window.alert("INVALID INPUT: please enter an integer for the flight number");
+      new PopupDialogBox("INVALID INPUT: please enter an integer for the flight number", false).show();
       return null;
     }
     //get airport source code
@@ -506,19 +613,19 @@ public class AirlineGwt implements EntryPoint {
     try {
       departureDateAndTime = parseDateAndTime(this.departureDatePanel);
     } catch (ParserException e) {
-      Window.alert(e.getMessage() + " for the departure");
+      new PopupDialogBox(e.getMessage() + " for the departure", false).show();
       return null;
     }
     //get arrival date and time
     try {
       arrivalDateAndTime = parseDateAndTime(this.arrivalDatePanel);
     } catch (ParserException e) {
-      Window.alert(e.getMessage() + " for the arrival");
+      new PopupDialogBox(e.getMessage() + " for the arrival", false).show();
       return null;
     }
     //invalid input if departure date/time is after arrival date/time
     if (getFlightDuration(departureDateAndTime, arrivalDateAndTime) < 0.0) {
-      Window.alert("INVALID INPUT: could not add flight because arrival date/time precedes departure date/time");
+      new PopupDialogBox("INVALID INPUT: could not add flight because arrival date/time precedes departure date/time", false).show();
       return null;
     }
     return new Flight(flightNumber, srcAirportCode, departureDateAndTime, destAirportCode, arrivalDateAndTime);
@@ -711,11 +818,50 @@ public class AirlineGwt implements EntryPoint {
         //else flight is null, and errors should have been displayed. Nothing has changed
       }
     });
+    this.deleteFlightButton.addClickHandler(new ClickHandler() {
+      @Override
+      public void onClick(ClickEvent event) {
+        final PopupDialogBox yesNo = new PopupDialogBox("Are you sure you want to delete the selected flight?\nThis cannot be undone.", true);
+        yesNo.show();
+        yesNo.addCloseHandler(new CloseHandler<PopupPanel>() {
+          @Override
+          public void onClose(CloseEvent<PopupPanel> event) {
+            if(yesNo.promptBooleanValue == true) {
+              deleteAFlight(flightToDelete);
+            }
+          }
+        });
+      }
+    });
   }
 
-  public String buildReadMe() {
-    StringBuilder str = new StringBuilder();
-    return str.toString();
+  public static String buildReadMeText() {
+    StringBuilder readMeStr = new StringBuilder();
+    readMeStr.append("                                          AIRLINE FLIGHT MANAGEMENT PROGRAM\n\n");
+    readMeStr.append("This program allows you to create a new airline with a flight. Once the first airline is created it will persist\n");
+    readMeStr.append("and that same airline name must be used to add flights to the airline. The left-side form has fields to add a flight\n");
+    readMeStr.append("with the airline's name, and the the flight's: number, flight source, departure date/time, flight destination, and arrival\n");
+    readMeStr.append("date/time.\n\n");
+    readMeStr.append("                                          Adding A Flight\n");
+    readMeStr.append("Criteria for a successful flight addition:\n");
+    readMeStr.append("(1) The airline name must match the name on the server\n");
+    readMeStr.append("(2) The flight number must be a valid integer\n");
+    readMeStr.append("(3) A valid date must be in the \"mm/dd/yyyy\" format where only integers are allowed\n");
+    readMeStr.append("(4) A flight's arrival date/time must be not precede that flight's departure date/time\n");
+    readMeStr.append("(5) A flight cannot be duplicated to another one with the exact flight descriptions\n\n");
+    readMeStr.append("                                          Searching for Flights\n");
+    readMeStr.append("The table lists all of the flights that are either linked to this airline or the search results from the search bar\n");
+    readMeStr.append("The search bar only has a limited number of search commands:\n");
+    for (String str : SEARCH_COMMANDS_LIST) {
+      readMeStr.append(str + "\n");
+    }
+    readMeStr.append("\n# indicates a valid integer for the flight number\nABC and XYZ indicate valid 3-letter airport codes\n");
+    readMeStr.append("**NOTE: a blank search displays all of the airline's flights\n\n");
+    readMeStr.append("                                          Deleting a Flight\n");
+    readMeStr.append("To a delete a flight, a flight must be highlighted on table of flights. If the one and only flight for an airline is\n");
+    readMeStr.append("then **the airline itself will be deleted as well**. A new airline will be created the next time a new flight is added.");
+
+    return readMeStr.toString();
   }
 
 

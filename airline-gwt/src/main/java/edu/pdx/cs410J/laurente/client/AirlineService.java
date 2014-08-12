@@ -16,4 +16,5 @@ public interface AirlineService extends RemoteService {
    */
   public AbstractAirline addAFlight(String airlineName, AbstractFlight flight);
   public AbstractAirline syncAirline();
+  public boolean deleteFlight(AbstractFlight flight);
 }

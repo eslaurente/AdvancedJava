@@ -14,4 +14,5 @@ public interface AirlineServiceAsync {
    */
   void addAFlight(String airlineName, AbstractFlight flight, AsyncCallback<AbstractAirline> async);
   void syncAirline(AsyncCallback<AbstractAirline> async);
+  void deleteFlight(AbstractFlight flight, AsyncCallback<Boolean> async);
 }
