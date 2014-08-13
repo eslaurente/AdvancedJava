@@ -1,3 +1,6 @@
+/**
+ *
+ */
 package edu.pdx.cs410J.laurente.client;
 
 import com.google.gwt.core.client.EntryPoint;
@@ -27,7 +30,8 @@ import static com.google.gwt.user.cellview.client.HasKeyboardSelectionPolicy.*;
 import java.util.*;
 
 /**
- * A basic GWT class that makes sure that we can send an airline back from the server
+ * This class implements a GWT EntryPoint which loads the user interface and instantiates the EventHandlers and data
+ * synchronization for the Airline Flight Management Program.
  */
 public class AirlineGwt implements EntryPoint {
   private static final String HINT_AIRLINE_NAME = "Airline name";
@@ -50,7 +54,7 @@ public class AirlineGwt implements EntryPoint {
   private Widget departureDatePanel;
   private ListBox airportDestListBox;
   private Widget arrivalDatePanel;
-  private Airline theAirline;
+  private Airline theAirline; //the working Airline object for the client
   private String airlineName;
   private Button addFlightButton;
   private Label tableAirlineName;
@@ -68,9 +72,21 @@ public class AirlineGwt implements EntryPoint {
   private Flight flightToDelete;
   private List<String> searchQuery;
   private static final List<String> SEARCH_COMMANDS_LIST = new ArrayList<String>(Arrays.asList("flight:#", "src:ABC", "dest:XYZ", "src:ABC dest:XYZ"));
+  private static final String SEARCH_USAGE = buildSearchFlightUsage();
+  private static final String README = buildReadMeText();
 
+  /**
+   * This is an inner helper class that allows this program to display its messages as an animated pop-up DialogBox
+   */
   private static class PopupDialogBox extends DialogBox {
     public boolean promptBooleanValue = false;
+
+    /**
+     * This is a constructor for the pup-up dialog box which displays the parameter text and can be displayed as a
+     * yes-or-no prompt or a normal message box
+     * @param text      The message to be displayed
+     * @param isPrompt  The boolean value of whether to create a yes-or-no prompt or a normal message box
+     */
     public PopupDialogBox(String text, boolean isPrompt) {
       setAnimationEnabled(true);
       setGlassEnabled(true);
@@ -124,7 +140,11 @@ public class AirlineGwt implements EntryPoint {
     }
   }
 
+  /**
+   * This method is the entry method that calls reloadTableWithAllFlights() and loadLayout() to initiate the interface
+   */
   public void onModuleLoad() {
+    Window.setTitle("Airline Flight Management Program");
     this.theAirline = null;
     this.serviceAsync = GWT.create(AirlineService.class);
     //Sync airline object from server with the client
@@ -132,6 +152,10 @@ public class AirlineGwt implements EntryPoint {
     loadLayout();
   }
 
+  /**
+   * This method calls the async method syncAirline() to sync the working airline object, theAirline, and update the
+   * table of flights Widget to list all of its flights.
+   */
   private void reloadTableWithAllFlights() {
     this.serviceAsync.syncAirline(new AsyncCallback<AbstractAirline>() {
       @Override
@@ -152,6 +176,9 @@ public class AirlineGwt implements EntryPoint {
     });
   }
 
+  /**
+   * This method instantiates and configures the panel for the main user interface
+   */
   private void loadLayout() {
     DockPanel p = new DockPanel();
     DecoratorPanel decoratedFormPanel = new DecoratorPanel();
@@ -179,10 +206,15 @@ public class AirlineGwt implements EntryPoint {
     p.setSpacing(10);
     this.tableAirlineName.getElement().getStyle().setFontSize(16, Style.Unit.PX);
     this.tableAirlineName.getElement().getStyle().setFontStyle(Style.FontStyle.ITALIC);
-    rootPanel.add(p);
+    this.rootPanel.add(p);
 
   }
 
+  /**
+   * This button instantiates and configures the Help menu bar on the top right corner. The README and About options are
+   * also configured here, and are added to the panel that houses them.
+   * @return     The menu bar panel with the Help menu instantiated
+   */
   private HorizontalPanel menuBarPanel() {
     HorizontalPanel panel = new HorizontalPanel();
     MenuBar menuBar = new MenuBar();
@@ -191,22 +223,27 @@ public class AirlineGwt implements EntryPoint {
     help.addItem("README", new Command() {
       @Override
       public void execute() {
-        new PopupDialogBox(buildReadMeText(), false).show();
+        new PopupDialogBox(README, false).show();
       }
     });
     help.addItem("About", new Command() {
       @Override
       public void execute() {
-        new PopupDialogBox("About this program", false).show();
+        StringBuilder about = new StringBuilder();
+        about.append("This program is for the final project (Project 5) for David Whitlock's\nCS410J Advanced Java Programming course at PSU.\n");
+        about.append("For educational purposes only");
+        about.append("\n\n@Author: Emerald Laurente");
+        new PopupDialogBox(about.toString(), false).show();
       }
     });
-    //panel.setWidth("100px");
-   // panel.setBorderWidth(1);
-    //panel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_RIGHT);
     panel.add(menuBar);
     return panel;
   }
 
+  /**
+   * This method configures the panel that houses the searchBox SuggestionBox and the searchButton Button Widget objects
+   * @return    The instatiated search panel
+   */
   private HorizontalPanel configureSearchBox() {
     HorizontalPanel panel = new HorizontalPanel();
     this.searchButton = new Button();
@@ -227,14 +264,11 @@ public class AirlineGwt implements EntryPoint {
     return panel;
   }
 
+  /**
+   * This method configures the behavior and logic of the search button, which extracts the actual search query arguments
+   * from searchBox SuggestionBox field. searchButton click event hadnling, parsing, and error handling is done here.
+   */
   private void setSearchButtonHandler() {
-    final StringBuilder searchUsage = new StringBuilder();
-    searchUsage.append("Only the following search commands are supported:\n");
-    for (String str : this.SEARCH_COMMANDS_LIST) {
-      searchUsage.append(str + "\n");
-    }
-    searchUsage.append("\n# indicates a valid integer for the flight number\nABC and XYZ indicate valid 3-letter airport codes\n");
-    searchUsage.append("*NOTE: a blank search displays all of the airline's flights");
     this.searchButton.addClickHandler(new ClickHandler() {
       @Override
       public void onClick(ClickEvent event) {
@@ -256,11 +290,11 @@ public class AirlineGwt implements EntryPoint {
                 searchFlightBySrcAndDest(str2.replaceAll(SRC_SEARCH_PREFIX, ""), str1.replaceAll(DEST_SEARCH_PREFIX, ""));
               }
             } catch (ParserException e) {
-              new PopupDialogBox(e.getMessage() + searchUsage, false).show();
+              new PopupDialogBox(e.getMessage() + SEARCH_USAGE, false).show();
             }
           }
           else {
-            new PopupDialogBox("INVALID INPUT: " + str1 + " " + str2 + " is not a valid search command\n\n" + searchUsage, false).show();
+            new PopupDialogBox("INVALID INPUT: " + str1 + " " + str2 + " is not a valid search command\n\n" + SEARCH_USAGE, false).show();
           }
         }
         else if (searchQuery.size() == 1) {
@@ -269,34 +303,42 @@ public class AirlineGwt implements EntryPoint {
             try {
               searchByFlightNumber(str.replaceFirst(FLIGHT_SEARCH_PREFIX, ""));
             } catch (ParserException e) {
-              new PopupDialogBox(e.getMessage() + searchUsage, false).show();
+              new PopupDialogBox(e.getMessage() + SEARCH_USAGE, false).show();
             }
           }
           else if (str.startsWith(SRC_SEARCH_PREFIX)) {
             try {
               searchFlightBySrc(str.replaceFirst(SRC_SEARCH_PREFIX, ""));
             } catch (ParserException e) {
-              new PopupDialogBox(e.getMessage() + searchUsage, false).show();
+              new PopupDialogBox(e.getMessage() + SEARCH_USAGE, false).show();
             }
           }
           else if (str.startsWith(DEST_SEARCH_PREFIX)) {
             try {
               searchFlightByDest(str.replaceFirst(DEST_SEARCH_PREFIX, ""));
             } catch (ParserException e) {
-              new PopupDialogBox(e.getMessage() + searchUsage, false).show();
+              new PopupDialogBox(e.getMessage() + SEARCH_USAGE, false).show();
             }
           }
           else {
-            new PopupDialogBox("INVALID INPUT: " + str + " is not a valid search command\n\n" + searchUsage, false).show();
+            new PopupDialogBox("INVALID INPUT: " + str + " is not a valid search command\n\n" + SEARCH_USAGE, false).show();
           }
         }
         else {
-          new PopupDialogBox("INVALID INPUT:\n\n" + searchUsage, false).show();
+          new PopupDialogBox("INVALID INPUT:\n\n" + SEARCH_USAGE, false).show();
         }
       }
     });
   }
 
+  /**
+   * This method updates the list of flights table that matches flights from the current working airline with both the
+   * airport source AND destination code that is the parameter. The async method syncAirline() is first called to
+   * ensure the most recent state of the airline is being used.
+   * @param src               The airport source code to be parsed and searched with
+   * @param dest              The airport destination code to be parsed and searched with
+   * @throws ParserException  Thrown if the either one or both of src and dest is not in the list of known airport codes
+   */
   private void searchFlightBySrcAndDest(String src, String dest) throws ParserException {
     final String srcCode = src.toUpperCase();
     final String destCode = dest.toUpperCase();
@@ -339,6 +381,13 @@ public class AirlineGwt implements EntryPoint {
     });
   }
 
+  /**
+   * This method updates the list of flights table that matches flights from the current working airline with the
+   * airport destination code that is the parameter. The async method syncAirline() is first called to ensure the most recent
+   * state of the airline is being used.
+   * @param airportCode           The airport code to be parsed and searched with
+   * @throws ParserException      Thrown if airportCode is not in the list of known airport codes
+   */
   private void searchFlightByDest(String airportCode) throws ParserException {
     final String code = airportCode.toUpperCase();
     if (isValidAirportCode(code) == true) {
@@ -374,6 +423,13 @@ public class AirlineGwt implements EntryPoint {
     }
   }
 
+  /**
+   * This method updates the list of flights table that matches flights from the current working airline with the
+   * airport source code that is the parameter. The async method syncAirline() is first called to ensure the most recent
+   * state of the airline is being used.
+   * @param airportCode       The airport code to be parsed and searched with
+   * @throws ParserException  Thrown if airportCode is not in the known-list of airports
+   */
   private void searchFlightBySrc(String airportCode) throws ParserException {
     final String code = airportCode.toUpperCase();
     if (isValidAirportCode(code) == true) {
@@ -413,6 +469,13 @@ public class AirlineGwt implements EntryPoint {
     return codesToNamesMapping.get(s) != null ? true : false;
   }
 
+  /**
+   * This method searches the list of flights of the working airline by flight number. The async method syncAirline() is called
+   * first to ensure that the most current state of the Airline object is in sync with the working Airline object, theAirline. In
+   * addition, this method first parses the String representation of the flight before anything.
+   * @param flightNumberStr     The String representation of a Flight's object's flight number
+   * @throws ParserException    Thrown if flightNumberStr is not a valid int/Integer object
+   */
   private void searchByFlightNumber(String flightNumberStr) throws ParserException {
     final int flightNum;
     try {
@@ -449,6 +512,11 @@ public class AirlineGwt implements EntryPoint {
     });
   }
 
+  /**
+   * This method will remove a Flight object by calling the async method deleteFlight() as well as displaying a popup
+   * confirmation before deletion. After a flight deletion, the flights table will be updated.
+   * @param flight    The Flight object to be deleted
+   */
   private void deleteAFlight(final Flight flight) {
     final DecoratedPopupPanel popup = new DecoratedPopupPanel(true);
     popup.center();
@@ -473,11 +541,17 @@ public class AirlineGwt implements EntryPoint {
           popup.add(new Label("ERROR: Could not remove that flight!"));
         }
         popup.show();
+        searchBox.setText("");
         reloadTableWithAllFlights();
       }
     });
   }
 
+  /**
+   * This method will instantiate and configure the cell table, using CellTable, which displays information about a list of flights,
+   * per column: the flight number, departure airport source, departure date and time, arrival airport destination, arrival date and time,
+   * the flight's duration in hours. A SelectionModel object is also created to get the Flight object selected, used for the deleting feature.
+   */
   private void loadTable() {
     // Create a CellTable.
     this.flightsTable = new CellTable<Flight>();
@@ -551,6 +625,13 @@ public class AirlineGwt implements EntryPoint {
     this.flightsTablePanel.setHeight("350px");
   }
 
+  /**
+   * This method updates the table of flights according to the either the current working airline (if it exists) or form
+   * an alternative list of flights from a resulting search inquiry
+   * @param altDataProvider     The boolean value of whether or not this update will use the working airline object or
+   *                            the alternativeList list of Flight objects
+   * @param alternativeList     The alternative list of Flight objects to update the list with
+   */
   private void updateFlightsTable(boolean altDataProvider, List<Flight> alternativeList) {
     if (altDataProvider == false && this.theAirline != null && this.theAirline.getFlights().size() >= 1) {
       this.tableAirlineName.setText("AIRLINE: " + this.airlineName);
@@ -580,7 +661,12 @@ public class AirlineGwt implements EntryPoint {
     }
   }
 
-
+  /**
+   * This method starts the extraction of the add-a-flight form's Widgets' values. The parsing logic is implemented
+   * in this method, as well.
+   * @return    The Flight object that was created from a successful parsing of data for a flight. Null value is returned
+   *            if the parsing process encounters a problem
+   */
   private Flight getFlightFromForm() {
     //get airline name
     String nameTemp = this.airlineNameTextBox.getValue();
@@ -606,9 +692,9 @@ public class AirlineGwt implements EntryPoint {
       return null;
     }
     //get airport source code
-    srcAirportCode = parseAirportCode(this.airportSrcListBox);
+    srcAirportCode = extractAriportCode(this.airportSrcListBox);
     //get airport destination code
-    destAirportCode = parseAirportCode(this.airportDestListBox);
+    destAirportCode = extractAriportCode(this.airportDestListBox);
     //get departure date and time
     try {
       departureDateAndTime = parseDateAndTime(this.departureDatePanel);
@@ -631,6 +717,12 @@ public class AirlineGwt implements EntryPoint {
     return new Flight(flightNumber, srcAirportCode, departureDateAndTime, destAirportCode, arrivalDateAndTime);
   }
 
+  /**
+   * This method sets up the add-a-flight form using a VerticalPanel panel, that has Widgets for the airline's name, flight's
+   * number, airoport source and destination listbox chooser, and departure and arrival date and time pickers. Finally a submit
+   * button to signal parsing of the widgets' values.
+   * @return    The panel that has the add-a-flight form
+   */
   private VerticalPanel createAddFlightForm() {
     VerticalPanel panel = new VerticalPanel();
     this.departureDatePanel = createDateTimePicker("Departure date and time");
@@ -653,6 +745,12 @@ public class AirlineGwt implements EntryPoint {
     return panel;
   }
 
+  /**
+   * This method sets up a panel with appropriate sizeing and labeling for an airport code listbox chooser
+   * @param title           The panel label for this listbox chooser
+   * @param listBoxSource   The ListBox object to be added to this panel
+   * @return                The panel created with the label followed by the listbox
+   */
   private VerticalPanel getAirportCodePanel(String title, ListBox listBoxSource) {
     VerticalPanel panel = new VerticalPanel();
     populateAirportCode(listBoxSource);
@@ -662,6 +760,10 @@ public class AirlineGwt implements EntryPoint {
     return panel;
   }
 
+  /**
+   * This method iterates through the list of airport codes populates a ListBox object's values with each item
+   * @param list     The ListBox list with populated values
+   */
   private void populateAirportCode(ListBox list) {
     for (String code : airportCodesList) {
       list.addItem(codesToNamesMapping.get(code) + " (" + code + ")");
@@ -669,6 +771,11 @@ public class AirlineGwt implements EntryPoint {
     list.setSelectedIndex(0);
   }
 
+  /**
+   * This method creates a panel that houses both the date picker and custom time picker
+   * @param title    The label that precedes the date and time picker
+   * @return         The panel that houses both the date and time picker
+   */
   private VerticalPanel createDateTimePicker(String title) {
     VerticalPanel panel = new VerticalPanel();
     HorizontalPanel datePanel = new HorizontalPanel();
@@ -685,6 +792,10 @@ public class AirlineGwt implements EntryPoint {
     return panel;
   }
 
+  /**
+   * This method creates a custom time picker that allows a user to choose the hour, minute, and am|pm marker for a time
+   * @return      The panel that contains a series of ListBox objects representing a time picker
+   */
   private HorizontalPanel getTimePicker() {
     HorizontalPanel panel = new HorizontalPanel();
     ListBox hour = new ListBox(false);
@@ -716,6 +827,12 @@ public class AirlineGwt implements EntryPoint {
     return panel;
   }
 
+  /**
+   * This method parses the date and time from a DateBox object and a series of ListBox objects that represent the time
+   * @param mainPanel         The panel that contains the DateBox object and ListBox ojbects
+   * @return                  The Date object representation from parsing
+   * @throws ParserException  Thrown if the DateBox component parses and returns a  null values
+   */
   private Date parseDateAndTime(Widget mainPanel) throws ParserException{
     StringBuilder result = new StringBuilder();
     Widget panel = ((ComplexPanel) mainPanel).getWidget(1);
@@ -753,13 +870,21 @@ public class AirlineGwt implements EntryPoint {
     return DATE_TIME_FORMAT.parse(result.toString());
   }
 
-  private String parseAirportCode(ListBox listbox) {
+  /**
+   * This method extracts the selected text from a ListBox object
+   * @param listbox     The ListBox object to be extracted
+   * @return            The airport code equivalent of the selected value
+   */
+  private String extractAriportCode(ListBox listbox) {
     String airportCode = "";
     int selectionIndex = listbox.getSelectedIndex();
     airportCode = airportCodesList.get(selectionIndex);
     return airportCode;
   }
 
+  /**
+   * This method sets event handlers for various Widget components of the program
+   */
   private void setHandlers() {
     this.airlineNameTextBox.addFocusHandler(new FocusHandler() {
       @Override
@@ -835,33 +960,57 @@ public class AirlineGwt implements EntryPoint {
     });
   }
 
+  /**
+   * This method builds the README which details the program's functionality
+   * @return
+   */
   public static String buildReadMeText() {
     StringBuilder readMeStr = new StringBuilder();
-    readMeStr.append("                                          AIRLINE FLIGHT MANAGEMENT PROGRAM\n\n");
+    readMeStr.append("AIRLINE FLIGHT MANAGEMENT PROGRAM\n\n");
     readMeStr.append("This program allows you to create a new airline with a flight. Once the first airline is created it will persist\n");
     readMeStr.append("and that same airline name must be used to add flights to the airline. The left-side form has fields to add a flight\n");
     readMeStr.append("with the airline's name, and the the flight's: number, flight source, departure date/time, flight destination, and arrival\n");
     readMeStr.append("date/time.\n\n");
-    readMeStr.append("                                          Adding A Flight\n");
+    readMeStr.append("Adding A Flight\n");
     readMeStr.append("Criteria for a successful flight addition:\n");
     readMeStr.append("(1) The airline name must match the name on the server\n");
     readMeStr.append("(2) The flight number must be a valid integer\n");
     readMeStr.append("(3) A valid date must be in the \"mm/dd/yyyy\" format where only integers are allowed\n");
     readMeStr.append("(4) A flight's arrival date/time must be not precede that flight's departure date/time\n");
     readMeStr.append("(5) A flight cannot be duplicated to another one with the exact flight descriptions\n\n");
-    readMeStr.append("                                          Searching for Flights\n");
-    readMeStr.append("The table lists all of the flights that are either linked to this airline or the search results from the search bar\n");
-    readMeStr.append("The search bar only has a limited number of search commands:\n");
-    for (String str : SEARCH_COMMANDS_LIST) {
-      readMeStr.append(str + "\n");
-    }
-    readMeStr.append("\n# indicates a valid integer for the flight number\nABC and XYZ indicate valid 3-letter airport codes\n");
-    readMeStr.append("**NOTE: a blank search displays all of the airline's flights\n\n");
-    readMeStr.append("                                          Deleting a Flight\n");
+    readMeStr.append("Searching for Flights\n");
+    readMeStr.append("The table lists all of the flights that are either linked to this airline or the search results from the search bar.\n");
+    readMeStr.append(SEARCH_USAGE);
+    readMeStr.append("\nDeleting a Flight\n");
     readMeStr.append("To a delete a flight, a flight must be highlighted on table of flights. If the one and only flight for an airline is\n");
     readMeStr.append("then **the airline itself will be deleted as well**. A new airline will be created the next time a new flight is added.");
-
     return readMeStr.toString();
+  }
+
+  /**
+   * This method builds the usage information about the search command features of the program
+   * @return
+   */
+  private static String buildSearchFlightUsage() {
+    StringBuilder usage = new StringBuilder();
+    usage.append("You can search flights by:\n");
+    for (String str : SEARCH_COMMANDS_LIST) {
+      usage.append(str);
+      if (str.equals("flight:#")) {
+        usage.append(" -- flights with this flight number (valid integer)\n");
+      }
+      else if (str.equals("src:ABC")) {
+        usage.append(" -- flights with this source 3-letter airport code\n");
+      }
+      else if (str.equals("dest:XYZ")) {
+        usage.append(" -- flights with this destination 3-letter airport code\n");
+      }
+      else {
+        usage.append(" -- flights that have both the following source and destination 3-letter airport codes\n");
+      }
+    }
+    usage.append("**NOTE: a blank search displays all of the airline's flights**\n");
+    return usage.toString();
   }
 
 

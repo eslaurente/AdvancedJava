@@ -144,20 +144,6 @@ public class Flight extends AbstractFlight implements Comparable {
    * @return        The string representation of the formatted date
    */
   private String parseDateTimeToString(Date date) {
-    //String arrivalString;
-    /*
-    SimpleDateFormat shortForm = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
-    shortForm.setLenient(false);
-    try {
-      arrivalString = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).parse(shortForm.format(date)).toString();
-    } catch (ParseException e) {
-      System.err.println("Error converting date/time to string: " + e.getMessage());
-      System.exit(1);
-      return null;
-    }
-    */
-
-    //return DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(date);
     return getFormat(DATE_TIME_FORMAT).format(date);
   }
 
