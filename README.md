@@ -22,8 +22,8 @@ Deleting a flight entry ![Alt-text](https://raw.githubusercontent.com/eslaurente
 
 (1) Ensure that you have the Java JDK version 1.7 or higher installed on your machine
 (2) Install Apache Maven on your system: 
- > Download the latest version of Maven at: http://maven.apache.org/download.cgi
- > Unzip apache-maven3.x.y archive
+  a. Download the latest version of Maven at: http://maven.apache.org/download.cgi
+  b. Unzip apache-maven3.x.y archive
  > Add the location of the extracted archive folder to your environment path
  > Ensure that the JAVA_HOME variable is pointing to actual JDK path (in Linux: /usr/libexec/java_home)
     > in Linux, in your ~/.bash_profile file, add the following:
