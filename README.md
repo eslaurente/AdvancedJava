@@ -16,3 +16,19 @@ Adding an airline and a flight ![Adding an airline and a flight](https://github.
 Searching/filtering flights by flight number, source, and destination ![Alt-text](https://raw.githubusercontent.com/eslaurente/AdvancedJava/master/Screen%20Shot%202014-11-21%20at%205.38.15%20PM.png "Searching/filtering flights by flight number, source, and destination")
 
 Deleting a flight entry ![Alt-text](https://raw.githubusercontent.com/eslaurente/AdvancedJava/master/Screen%20Shot%202014-11-21%20at%205.37.06%20PM.png "Deleting a flight entry")
+
+
+**HOW TO RUN**
+
+(1) Ensure that you have the Java JDK version 1.7 or higher installed on your machine
+(2) Install Apache Maven on your system: 
+ > Download the latest version of Maven at: http://maven.apache.org/download.cgi
+ > Unzip apache-maven3.x.y archive
+ > Add the location of the extracted archive folder to your environment path
+ > Ensure that the JAVA_HOME variable is pointing to actual JDK path (in Linux: /usr/libexec/java_home)
+    > in Linux, in your ~/.bash_profile file, add the following:
+    >   export JAVA_HOME=$(/usr/libexec/java_home)
+    >   export PATH=/usr/local/apache-maven-3.2.3/bin:$PATH
+    > in the terminal, enter: source ~/.bash_profile to add
+    
+
