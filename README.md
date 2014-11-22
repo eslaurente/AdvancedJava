@@ -30,7 +30,7 @@ Deleting a flight entry ![Alt-text](https://raw.githubusercontent.com/eslaurente
   6. export JAVA_HOME=$(/usr/libexec/java_home)
   7. export PATH=/usr/local/apache-maven-3.2.3/bin:$PATH
   8. in the terminal, enter: source ~/.bash_profile to add
-3. in the terminal, in the *airline-gwt* folder, type in: ~mvn package
+3. in the terminal, in the *airline-gwt* folder, type in: `mvn package
 
   
 
