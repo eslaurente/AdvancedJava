@@ -15,4 +15,4 @@ Adding an airline and a flight ![Adding an airline and a flight](https://github.
 
 Searching/filtering flights by flight number, source, and destination ![Alt-text](https://raw.githubusercontent.com/eslaurente/AdvancedJava/master/Screen%20Shot%202014-11-21%20at%205.38.15%20PM.png "Searching/filtering flights by flight number, source, and destination")
 
-Deleting a flight entry ![Alt-text](https://raw.githubusercontent.com/eslaurente/AdvancedJava/master/Screen%20Shot%202014-11-21%20at%205.38.15%20PM.png "Deleting a flight entry")
+Deleting a flight entry ![Alt-text](https://raw.githubusercontent.com/eslaurente/AdvancedJava/master/Screen%20Shot%202014-11-21%20at%205.37.06%20PM.png "Deleting a flight entry")
