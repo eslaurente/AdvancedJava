@@ -27,10 +27,12 @@ Deleting a flight entry ![Alt-text](https://raw.githubusercontent.com/eslaurente
   3. Add the location of the extracted archive folder to your environment path
   4. Ensure that the JAVA_HOME variable is pointing to actual JDK path (in Linux: /usr/libexec/java_home)
   5. in Linux, in your ~/.bash_profile file, add the following: 
-  6. export JAVA_HOME=$(/usr/libexec/java_home)
-  7. export PATH=/usr/local/apache-maven-3.2.3/bin:$PATH
-  8. in the terminal, enter: source ~/.bash_profile to add
-3. in the terminal, in the *airline-gwt* folder, type in: `mvn package
+  6. `export JAVA_HOME=$(/usr/libexec/java_home)`
+  7. `export PATH=/usr/local/apache-maven-3.x.y/bin:$PATH` (after moving apache-maven folder to /usr/local/)
+  8. in the terminal, enter: `source ~/.bash_profile` to add
+3. in the terminal, in the *airline-gwt* folder, type in: `mvn package` (Note: this will take a while)
+4. in the terminal, type in:`mvn jetty:run-war` (Note: this will take a while, as Java code is converted to Javascript and HTML)
+5. Open a web browser and go to: http://localhost:8080/airline-gwt/airline/
 
   
 
