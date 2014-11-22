@@ -20,15 +20,17 @@ Deleting a flight entry ![Alt-text](https://raw.githubusercontent.com/eslaurente
 
 **HOW TO RUN**
 
-(1) Ensure that you have the Java JDK version 1.7 or higher installed on your machine
-(2) Install Apache Maven on your system: 
-  a. Download the latest version of Maven at: http://maven.apache.org/download.cgi
-  b. Unzip apache-maven3.x.y archive
- > Add the location of the extracted archive folder to your environment path
- > Ensure that the JAVA_HOME variable is pointing to actual JDK path (in Linux: /usr/libexec/java_home)
-    > in Linux, in your ~/.bash_profile file, add the following:
-    >   export JAVA_HOME=$(/usr/libexec/java_home)
-    >   export PATH=/usr/local/apache-maven-3.2.3/bin:$PATH
-    > in the terminal, enter: source ~/.bash_profile to add
-    
+1. Ensure that you have the Java JDK version 1.7 or higher installed on your machine
+2. Install Apache Maven on your system:  
+  1. Download the latest version of Maven at: http://maven.apache.org/download.cgi
+  2. Unzip apache-maven3.x.y archive
+  3. Add the location of the extracted archive folder to your environment path
+  4. Ensure that the JAVA_HOME variable is pointing to actual JDK path (in Linux: /usr/libexec/java_home)
+  5. in Linux, in your ~/.bash_profile file, add the following: 
+  6. export JAVA_HOME=$(/usr/libexec/java_home)
+  7. export PATH=/usr/local/apache-maven-3.2.3/bin:$PATH
+  8. in the terminal, enter: source ~/.bash_profile to add
+3. in the terminal, in the *airline-gwt* folder, type in: ~mvn package
+
+  
 
